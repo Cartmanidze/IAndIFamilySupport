@@ -1,3 +1,4 @@
+using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.Options;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
@@ -9,9 +10,9 @@ namespace IAndIFamilySupport.API.Services;
 
 public class TelegramUpdateService : ITelegramUpdateService
 {
-    private readonly TelegramSettings _settings;
-    private readonly ILogger<TelegramUpdateService> _logger;
     private readonly TelegramBotClient _botClient;
+    private readonly ILogger<TelegramUpdateService> _logger;
+    private readonly TelegramSettings _settings;
 
     public TelegramUpdateService(
         IOptions<TelegramSettings> options,
@@ -22,10 +23,10 @@ public class TelegramUpdateService : ITelegramUpdateService
 
         _botClient = new TelegramBotClient(_settings.Token);
     }
-    
+
     /// <summary>
-    /// Устанавливаем Webhook на URL, указанный в конфигурации.
-    /// Вызывается при старте приложения (в Program.cs).
+    ///     Устанавливаем Webhook на URL, указанный в конфигурации.
+    ///     Вызывается при старте приложения (в Program.cs).
     /// </summary>
     public async Task SetWebhookAsync()
     {
@@ -34,23 +35,18 @@ public class TelegramUpdateService : ITelegramUpdateService
     }
 
     /// <summary>
-    /// Основной метод для обработки входящих обновлений (Update).
-    /// Вызывается из контроллера при POST-запросе от Telegram.
+    ///     Основной метод для обработки входящих обновлений (Update).
+    ///     Вызывается из контроллера при POST-запросе от Telegram.
     /// </summary>
     /// <param name="update"></param>
     public async Task HandleUpdateAsync(Update update)
     {
         if (update.Type == UpdateType.Message)
-        {
             await HandleMessage(update.Message!);
-        }
-        else if (update.Type == UpdateType.CallbackQuery)
-        {
-            await HandleCallbackQuery(update.CallbackQuery!);
-        }
+        else if (update.Type == UpdateType.CallbackQuery) await HandleCallbackQuery(update.CallbackQuery!);
         // можно расширять на другие типы Update
     }
-    
+
     private async Task HandleMessage(Message message)
     {
         if (message.Type != MessageType.Text)
@@ -62,20 +58,16 @@ public class TelegramUpdateService : ITelegramUpdateService
         _logger.LogInformation("Получено текстовое сообщение: {Text} из чата {ChatId}", text, chatId);
 
         if (text == "/start")
-        {
             await SendWelcomeMenu(chatId);
-        }
         else
-        {
             // Любое другое сообщение
             await _botClient.SendMessage(
                 chatId,
                 "Пожалуйста, выберите действие через /start или используйте меню.",
                 replyMarkup: new ReplyKeyboardRemove()
             );
-        }
     }
-    
+
     private async Task HandleCallbackQuery(CallbackQuery callbackQuery)
     {
         var chatId = callbackQuery.Message!.Chat.Id;
@@ -116,23 +108,23 @@ public class TelegramUpdateService : ITelegramUpdateService
                 await _botClient.SendMessage(chatId, "Неизвестная команда");
                 break;
         }
-        
+
         await _botClient.AnswerCallbackQuery(callbackQuery.Id);
     }
-    
+
     private async Task SendIssueMenu(long chatId, string model)
     {
         var text = $"Вы выбрали модель: {model}\nВыберите проблему:";
-        
+
         var inlineKeyboard = new InlineKeyboardMarkup([
             [
-                InlineKeyboardButton.WithCallbackData("Как подключить?",       "HOW_TO_CONNECT")
+                InlineKeyboardButton.WithCallbackData("Как подключить?", "HOW_TO_CONNECT")
             ],
             [
-                InlineKeyboardButton.WithCallbackData("Не воспроизводится?",   "NO_PLAY")
+                InlineKeyboardButton.WithCallbackData("Не воспроизводится?", "NO_PLAY")
             ],
             [
-                InlineKeyboardButton.WithCallbackData("Помощь в настройке",    "SETTINGS_HELP")
+                InlineKeyboardButton.WithCallbackData("Помощь в настройке", "SETTINGS_HELP")
             ]
         ]);
 
@@ -142,13 +134,13 @@ public class TelegramUpdateService : ITelegramUpdateService
             replyMarkup: inlineKeyboard
         );
     }
-    
+
     /// <summary>
-    /// Первое меню (выбор диктофона).
+    ///     Первое меню (выбор диктофона).
     /// </summary>
     private async Task SendWelcomeMenu(long chatId)
     {
-        var welcomeText = 
+        var welcomeText =
             "Здравствуйте!\n\n" +
             "Добро пожаловать в службу техподдержки I and I family!\n" +
             "Опишите, пожалуйста, вашу проблему, или выберите устройство ниже.\n\n" +
@@ -157,8 +149,8 @@ public class TelegramUpdateService : ITelegramUpdateService
         var inlineKeyboard = new InlineKeyboardMarkup([
             [
                 InlineKeyboardButton.WithCallbackData("R8 PLUS (8,32,64)", "R8_PLUS"),
-                InlineKeyboardButton.WithCallbackData("R3 (8,32,64)",      "R3"),
-                InlineKeyboardButton.WithCallbackData("R8 (8,32,64)",      "R8")
+                InlineKeyboardButton.WithCallbackData("R3 (8,32,64)", "R3"),
+                InlineKeyboardButton.WithCallbackData("R8 (8,32,64)", "R8")
             ]
         ]);
 

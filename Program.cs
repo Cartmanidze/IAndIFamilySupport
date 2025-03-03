@@ -1,3 +1,4 @@
+using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.Middleware;
 using IAndIFamilySupport.API.Options;
 using IAndIFamilySupport.API.Services;
@@ -47,10 +48,7 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "IAndIFamilySupport API V1");
-    });
+    app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "IAndIFamilySupport API V1"); });
 }
 
 // Подключаем маршрутизацию для контроллеров

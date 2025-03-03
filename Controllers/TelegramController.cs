@@ -1,4 +1,4 @@
-using IAndIFamilySupport.API.Services;
+using IAndIFamilySupport.API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
 
@@ -14,7 +14,7 @@ public class TelegramController : ControllerBase
     {
         _telegramService = telegramService;
     }
-    
+
     [HttpPost("update")]
     public async Task<IActionResult> Post([FromBody] Update update)
     {

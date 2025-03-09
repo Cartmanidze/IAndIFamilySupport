@@ -12,4 +12,8 @@
         <PackageReference Include="Telegram.Bot" Version="22.4.1"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Files\**\*.*"/>
+    </ItemGroup>
+
 </Project>

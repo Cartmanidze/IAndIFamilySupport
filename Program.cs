@@ -13,6 +13,8 @@ builder.Services.Configure<TelegramSettings>(
 // Подключаем сервисы
 builder.Services.AddTransient<ITelegramUpdateService, TelegramUpdateService>();
 
+builder.Services.AddSingleton<IStateService, InMemoryStateService>();
+
 builder.Services
     .AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.PropertyNamingPolicy = new SnakeCaseNamingPolicy());

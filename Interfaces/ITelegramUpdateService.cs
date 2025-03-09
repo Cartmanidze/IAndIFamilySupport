@@ -5,5 +5,6 @@ namespace IAndIFamilySupport.API.Interfaces;
 public interface ITelegramUpdateService
 {
     Task SetWebhookAsync();
+
     Task HandleUpdateAsync(Update update);
 }

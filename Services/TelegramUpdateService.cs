@@ -1,10 +1,10 @@
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.Options;
+using IAndIFamilySupport.API.States;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace IAndIFamilySupport.API.Services;
 
@@ -13,151 +13,96 @@ public class TelegramUpdateService : ITelegramUpdateService
     private readonly TelegramBotClient _botClient;
     private readonly ILogger<TelegramUpdateService> _logger;
     private readonly TelegramSettings _settings;
+    private readonly IStateService _stateService;
+    private readonly IEnumerable<IScenarioStrategy> _strategies;
 
     public TelegramUpdateService(
         IOptions<TelegramSettings> options,
-        ILogger<TelegramUpdateService> logger)
+        ILogger<TelegramUpdateService> logger,
+        IStateService stateService,
+        IEnumerable<IScenarioStrategy> strategies)
     {
         _settings = options.Value;
         _logger = logger;
+        _stateService = stateService;
+        _strategies = strategies;
 
         _botClient = new TelegramBotClient(_settings.Token);
     }
 
-    /// <summary>
-    ///     Устанавливаем Webhook на URL, указанный в конфигурации.
-    ///     Вызывается при старте приложения (в Program.cs).
-    /// </summary>
     public async Task SetWebhookAsync()
     {
         _logger.LogInformation("Устанавливаем Webhook на {WebhookUrl}", _settings.WebhookUrl);
         await _botClient.SetWebhook(_settings.WebhookUrl);
     }
 
-    /// <summary>
-    ///     Основной метод для обработки входящих обновлений (Update).
-    ///     Вызывается из контроллера при POST-запросе от Telegram.
-    /// </summary>
-    /// <param name="update"></param>
     public async Task HandleUpdateAsync(Update update)
     {
-        if (update.Type == UpdateType.Message)
-            await HandleMessage(update.Message!);
-        else if (update.Type == UpdateType.CallbackQuery) await HandleCallbackQuery(update.CallbackQuery!);
-        // можно расширять на другие типы Update
-    }
+        long userId;
 
-    private async Task HandleMessage(Message message)
-    {
-        if (message.Type != MessageType.Text)
-            return;
-
-        var chatId = message.Chat.Id;
-        var text = message.Text;
-
-        _logger.LogInformation("Получено текстовое сообщение: {Text} из чата {ChatId}", text, chatId);
-
-        if (text == "/start")
-            await SendWelcomeMenu(chatId);
-        else
-            // Любое другое сообщение
-            await _botClient.SendMessage(
-                chatId,
-                "Пожалуйста, выберите действие через /start или используйте меню.",
-                replyMarkup: new ReplyKeyboardRemove()
-            );
-    }
-
-    private async Task HandleCallbackQuery(CallbackQuery callbackQuery)
-    {
-        var chatId = callbackQuery.Message!.Chat.Id;
-        var data = callbackQuery.Data;
-
-        _logger.LogInformation("Обработка нажатия кнопки: {Data}", data);
-
-        switch (data)
+        switch (update.Type)
         {
-            case "R8_PLUS":
-            case "R3":
-            case "R8":
-                await SendIssueMenu(chatId, data);
+            case UpdateType.Message when update.Message?.From != null:
+                userId = update.Message.From.Id;
                 break;
-
-            case "HOW_TO_CONNECT":
-                await _botClient.SendMessage(
-                    chatId,
-                    "Инструкция по подключению:\n1) ...\n2) ...\n3) ..."
-                );
+            case UpdateType.CallbackQuery when update.CallbackQuery?.From != null:
+                userId = update.CallbackQuery.From.Id;
                 break;
-
-            case "NO_PLAY":
-                await _botClient.SendMessage(
-                    chatId,
-                    "Причины, по которым не воспроизводится запись:\n- ...\n- ..."
-                );
-                break;
-
-            case "SETTINGS_HELP":
-                await _botClient.SendMessage(
-                    chatId,
-                    "Помощь в настройке:\n1) ...\n2) ..."
-                );
-                break;
-
             default:
-                await _botClient.SendMessage(chatId, "Неизвестная команда");
-                break;
+                _logger.LogWarning("Unsupported update type: {UpdateType}", update.Type);
+                return;
         }
 
-        await _botClient.AnswerCallbackQuery(callbackQuery.Id);
-    }
+        var state = _stateService.GetUserState(userId);
+        var strategy = _strategies.FirstOrDefault(s => s.TargetSteps.Contains(state.CurrentStep));
 
-    private async Task SendIssueMenu(long chatId, string model)
-    {
-        var text = $"Вы выбрали модель: {model}\nВыберите проблему:";
+        if (strategy == null)
+        {
+            _logger.LogWarning("No strategy found for step: {Step}", state.CurrentStep);
 
-        var inlineKeyboard = new InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton.WithCallbackData("Как подключить?", "HOW_TO_CONNECT")
-            ],
-            [
-                InlineKeyboardButton.WithCallbackData("Не воспроизводится?", "NO_PLAY")
-            ],
-            [
-                InlineKeyboardButton.WithCallbackData("Помощь в настройке", "SETTINGS_HELP")
-            ]
-        ]);
+            state.CurrentStep = ScenarioStep.Start;
+            _stateService.UpdateUserState(state);
 
-        await _botClient.SendMessage(
-            chatId,
-            text,
-            replyMarkup: inlineKeyboard
-        );
-    }
+            strategy = _strategies.FirstOrDefault(s => s.TargetSteps.Contains(state.CurrentStep));
 
-    /// <summary>
-    ///     Первое меню (выбор диктофона).
-    /// </summary>
-    private async Task SendWelcomeMenu(long chatId)
-    {
-        var welcomeText =
-            "Здравствуйте!\n\n" +
-            "Добро пожаловать в службу техподдержки I and I family!\n" +
-            "Опишите, пожалуйста, вашу проблему, или выберите устройство ниже.\n\n" +
-            "Также можем предложить посмотреть наш Telegram-канал: https://t.me/IandIfamily";
+            if (strategy == null)
+            {
+                _logger.LogError("Critical error: No strategy found for Start step");
+                return;
+            }
+        }
 
-        var inlineKeyboard = new InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton.WithCallbackData("R8 PLUS (8,32,64)", "R8_PLUS"),
-                InlineKeyboardButton.WithCallbackData("R3 (8,32,64)", "R3"),
-                InlineKeyboardButton.WithCallbackData("R8 (8,32,64)", "R8")
-            ]
-        ]);
+        try
+        {
+            switch (update.Type)
+            {
+                case UpdateType.Message:
+                    await strategy.HandleMessageAsync(_botClient, update.Message!, state);
+                    break;
+                case UpdateType.CallbackQuery:
+                    await strategy.HandleCallbackAsync(_botClient, update.CallbackQuery!, state);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error handling update for user {UserId} in step {Step}",
+                userId, state.CurrentStep);
 
-        await _botClient.SendMessage(
-            chatId,
-            welcomeText,
-            replyMarkup: inlineKeyboard
-        );
+            try
+            {
+                var chatId = update.Type == UpdateType.Message
+                    ? update.Message!.Chat.Id
+                    : update.CallbackQuery!.Message!.Chat.Id;
+
+                await _botClient.SendMessage(
+                    chatId,
+                    "Произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз или напишите /start для начала заново.");
+            }
+            catch (Exception innerEx)
+            {
+                _logger.LogError(innerEx, "Error sending error message to user {UserId}", userId);
+            }
+        }
     }
 }

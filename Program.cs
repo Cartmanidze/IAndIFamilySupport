@@ -16,6 +16,7 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddSingleton<IResourceService, EmbeddedResourceService>();
 
 builder.Services.AddScoped<IScenarioStrategy, StartScenarioStrategy>();
+builder.Services.AddScoped<IScenarioStrategy, SelectProblemStrategy>();
 builder.Services.AddScoped<IScenarioStrategy, ConnectionScenarioStrategy>();
 builder.Services.AddScoped<IScenarioStrategy, NotPlayingScenarioStrategy>();
 builder.Services.AddScoped<IScenarioStrategy, SettingsScenarioStrategy>();

@@ -41,13 +41,19 @@ public static class KeyboardHelper
         ]);
     }
 
-    public static InlineKeyboardMarkup PhoneModelMenu()
+    public static InlineKeyboardMarkup PcModelMenu()
     {
         return new InlineKeyboardMarkup([
             [
-                InlineKeyboardButton.WithCallbackData("OC Windows", "PHONE_WINDOWS"),
-                InlineKeyboardButton.WithCallbackData("MacOS", "PHONE_MACOS")
-            ],
+                InlineKeyboardButton.WithCallbackData("OC Windows", "PC_WINDOWS"),
+                InlineKeyboardButton.WithCallbackData("MacOS", "PC_MACOS")
+            ]
+        ]);
+    }
+
+    public static InlineKeyboardMarkup PhoneModelMenu()
+    {
+        return new InlineKeyboardMarkup([
             [
                 InlineKeyboardButton.WithCallbackData("Apple iPhone до 15", "PHONE_IPHONE_OLD"),
                 InlineKeyboardButton.WithCallbackData("Apple iPhone после 15", "PHONE_IPHONE_NEW")
@@ -81,6 +87,16 @@ public static class KeyboardHelper
             [
                 InlineKeyboardButton.WithCallbackData("Да, получилось", yesData),
                 InlineKeyboardButton.WithCallbackData("Нет, не получилось", noData)
+            ]
+        ]);
+    }
+
+    public static InlineKeyboardMarkup ConfirmMenu(string yesData, string noData)
+    {
+        return new InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton.WithCallbackData("Подтверждаю", yesData),
+                InlineKeyboardButton.WithCallbackData("Не подтверждаю", noData)
             ]
         ]);
     }

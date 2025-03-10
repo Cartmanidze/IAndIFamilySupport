@@ -57,7 +57,7 @@ public class FinishScenarioStrategy : IScenarioStrategy
         {
             await bot.SendMessage(
                 chatId,
-                CommonPhoneConnectionRepository.ThanksMessage
+                CommonConnectionRepository.ThanksMessage
             );
         }
     }
@@ -71,47 +71,47 @@ public class FinishScenarioStrategy : IScenarioStrategy
 
         _logger.LogInformation("Handling finish scenario callback: {Data}", data);
 
-        if (data == "PROBLEM_SOLVED")
+        switch (data)
         {
-            await bot.SendMessage(
-                chatId,
-                "Мы рады, что смогли помочь вам решить проблему! " +
-                CommonPhoneConnectionRepository.ThanksMessage
-            );
-        }
-        else if (data == "PROBLEM_OTHER")
-        {
-            await bot.SendMessage(
-                chatId,
-                ConnectionScenarioTextRepository.TransferToSupport
-            );
+            case "PROBLEM_SOLVED":
+                await bot.SendMessage(
+                    chatId,
+                    "Мы рады, что смогли помочь вам решить проблему! " +
+                    CommonConnectionRepository.ThanksMessage
+                );
+                break;
+            case "PROBLEM_OTHER":
+                await bot.SendMessage(
+                    chatId,
+                    ConnectionScenarioTextRepository.TransferToSupport
+                );
 
-            state.CurrentStep = ScenarioStep.TransferToSupport;
-            _stateService.UpdateUserState(state);
-        }
-        else
-        {
-            ResetState(state);
-            _stateService.UpdateUserState(state);
+                state.CurrentStep = ScenarioStep.TransferToSupport;
+                _stateService.UpdateUserState(state);
+                break;
+            default:
+                ResetState(state);
+                _stateService.UpdateUserState(state);
 
-            await bot.SendMessage(
-                chatId,
-                "Начинаем заново..."
-            );
+                await bot.SendMessage(
+                    chatId,
+                    "Начинаем заново..."
+                );
 
-            await bot.SendMessage(
-                chatId,
-                StartScenarioTextRepository.FirstMessageReply
-            );
+                await bot.SendMessage(
+                    chatId,
+                    StartScenarioTextRepository.FirstMessageReply
+                );
 
-            await bot.SendMessage(
-                chatId,
-                StartScenarioTextRepository.ChooseModelPrompt,
-                replyMarkup: KeyboardHelper.RecorderModels()
-            );
+                await bot.SendMessage(
+                    chatId,
+                    StartScenarioTextRepository.ChooseModelPrompt,
+                    replyMarkup: KeyboardHelper.RecorderModels()
+                );
 
-            state.CurrentStep = ScenarioStep.SelectRecorderModel;
-            _stateService.UpdateUserState(state);
+                state.CurrentStep = ScenarioStep.SelectRecorderModel;
+                _stateService.UpdateUserState(state);
+                break;
         }
     }
 

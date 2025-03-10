@@ -27,6 +27,7 @@ public class ConnectionScenarioStrategy : IScenarioStrategy
     [
         ScenarioStep.HowToConnectDevice,
         ScenarioStep.HowToConnectPhoneModel,
+        ScenarioStep.HowToConnectPcModel,
         ScenarioStep.ConfirmPhoneConnected,
         ScenarioStep.ConfirmPcConnected
     ];
@@ -65,6 +66,10 @@ public class ConnectionScenarioStrategy : IScenarioStrategy
                 await HandlePhoneModelSelection(bot, chatId, data, state);
                 break;
 
+            case ScenarioStep.HowToConnectPcModel:
+                await HandlePcModelSelection(bot, chatId, data, state);
+                break;
+
             case ScenarioStep.ConfirmPhoneConnected:
                 await HandlePhoneConnectionResult(bot, chatId, data, state);
                 break;
@@ -89,44 +94,58 @@ public class ConnectionScenarioStrategy : IScenarioStrategy
 
         _logger.LogInformation("User selected device: {DeviceType}", deviceType);
 
-        if (deviceType == "PHONE")
+        switch (deviceType)
         {
-            await bot.SendMessage(
-                chatId,
-                ConnectionScenarioTextRepository.SpecifyPhoneModel,
-                replyMarkup: KeyboardHelper.PhoneModelMenu()
-            );
+            case "PHONE":
+                await bot.SendMessage(
+                    chatId,
+                    ConnectionScenarioTextRepository.SpecifyPhoneModel,
+                    replyMarkup: KeyboardHelper.PhoneModelMenu()
+                );
 
-            state.CurrentStep = ScenarioStep.HowToConnectPhoneModel;
-        }
-        else if (deviceType == "PC")
-        {
-            await _fileService.SendConnectionPhotoAsync(bot, chatId, "PC", "WINDOWS");
+                state.CurrentStep = ScenarioStep.HowToConnectPhoneModel;
+                break;
+            case "PC":
+                await bot.SendMessage(
+                    chatId,
+                    ConnectionScenarioTextRepository.SpecifyPhoneModel,
+                    replyMarkup: KeyboardHelper.PcModelMenu()
+                );
 
-            await bot.SendMessage(
-                chatId,
-                ConnectionScenarioTextRepository.DidConnectToComputer,
-                replyMarkup: KeyboardHelper.YesNoMenu("PC_CONNECTED_YES", "PC_CONNECTED_NO")
-            );
-
-            state.CurrentStep = ScenarioStep.ConfirmPcConnected;
-        }
-        else
-        {
-            await bot.SendMessage(
-                chatId,
-                "Неизвестное устройство. Пожалуйста, выберите из предложенных вариантов."
-            );
-            return;
+                state.CurrentStep = ScenarioStep.HowToConnectPcModel;
+                break;
+            default:
+                await bot.SendMessage(
+                    chatId,
+                    "Неизвестное устройство. Пожалуйста, выберите из предложенных вариантов."
+                );
+                return;
         }
 
         _stateService.UpdateUserState(state);
     }
 
+    private async Task HandlePcModelSelection(ITelegramBotClient bot, long chatId, string data,
+        TelegramUserState state)
+    {
+        var pcModel = data.StartsWith("PC_") ? data[3..] : data;
+        await _fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel);
+        await _fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel, 2);
+        await _fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel, 3);
+
+        await bot.SendMessage(
+            chatId,
+            ConnectionScenarioTextRepository.DidConnectToComputer,
+            replyMarkup: KeyboardHelper.YesNoMenu("PC_CONNECTED_YES", "PC_CONNECTED_NO")
+        );
+
+        state.CurrentStep = ScenarioStep.ConfirmPcConnected;
+    }
+
     private async Task HandlePhoneModelSelection(ITelegramBotClient bot, long chatId, string data,
         TelegramUserState state)
     {
-        var phoneModel = data.Replace("PHONE_", "");
+        var phoneModel = data.StartsWith("PHONE_") ? data[6..] : data;
         state.SelectedPhoneModel = phoneModel;
 
         _logger.LogInformation("User selected phone model: {PhoneModel}", phoneModel);
@@ -140,31 +159,45 @@ public class ConnectionScenarioStrategy : IScenarioStrategy
 
             state.CurrentStep = ScenarioStep.TransferToSupport;
         }
-        else if (phoneModel is "WINDOWS" or "MACOS")
-        {
-            await _fileService.SendConnectionPhotoAsync(bot, chatId, "PC", phoneModel);
-
-            await bot.SendMessage(
-                chatId,
-                ConnectionScenarioTextRepository.DidConnectToComputer,
-                replyMarkup: KeyboardHelper.YesNoMenu("PC_CONNECTED_YES", "PC_CONNECTED_NO")
-            );
-
-            state.CurrentStep = ScenarioStep.ConfirmPcConnected;
-        }
         else
         {
             await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel);
 
-            if (phoneModel is "XIAOMI" or "REDMI" or "POCO")
+            if (state.SelectedPhoneModel is "IPHONE_OLD")
+                await bot.SendMessage(
+                    chatId,
+                    ConnectionScenarioTextRepository.NeededOtg
+                );
+
+            if (state.SelectedPhoneModel is "IPHONE_OLD" or "IPHONE_NEW")
+            {
+                await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", state.SelectedPhoneModel, 2);
+                await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", state.SelectedPhoneModel, 3);
+                await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", state.SelectedPhoneModel, 4);
+
+                if (state.SelectedPhoneModel is "IPHONE_OLD")
+                    await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", state.SelectedPhoneModel, 5);
+
+                await bot.SendMessage(
+                    chatId,
+                    AccessoriesCheckRepository.CheckAccessories
+                );
+            }
+            else
+            {
                 await bot.SendMessage(
                     chatId,
                     ConnectionScenarioTextRepository.OtgActivationRecommendation
                 );
 
+                await bot.SendMessage(chatId, ConnectionScenarioTextRepository.GetOtgActivationInstruction(phoneModel));
+            }
+
+            await bot.SendMessage(chatId, ConnectionScenarioTextRepository.DictaphoneFolderLocation);
+
             await bot.SendMessage(
                 chatId,
-                CommonPhoneConnectionRepository.DidConnectToPhone,
+                CommonConnectionRepository.DidConnectToPhone,
                 replyMarkup: KeyboardHelper.YesNoMenu("PHONE_CONNECTED_YES", "PHONE_CONNECTED_NO")
             );
 
@@ -179,48 +212,25 @@ public class ConnectionScenarioStrategy : IScenarioStrategy
     {
         if (data == "PHONE_CONNECTED_YES")
         {
-            // Show success message
-            await bot.SendTextMessageAsync(
+            await bot.SendMessage(
                 chatId,
-                CommonPhoneConnectionRepository.ThanksMessage
+                CommonConnectionRepository.ThanksMessage
             );
 
-            // Update state to finish
             state.CurrentStep = ScenarioStep.Finish;
         }
         else if (data == "PHONE_CONNECTED_NO")
         {
-            // Send additional photo(s) based on phone model
-            if (state.SelectedPhoneModel == "IPHONE_OLD" || state.SelectedPhoneModel == "IPHONE_NEW")
-            {
-                // For iPhone: Send more detailed instructions
-                await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", state.SelectedPhoneModel, 2);
-                await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", state.SelectedPhoneModel, 3);
-                await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", state.SelectedPhoneModel, 4);
-            }
-            else
-            {
-                // For Android: Check accessories
-                await bot.SendTextMessageAsync(
-                    chatId,
-                    AccessoriesCheckRepository.CheckAccessories
-                );
-
-                await _fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", state.SelectedPhoneModel, 2);
-            }
-
-            // Transfer to support
-            await bot.SendTextMessageAsync(
+            await bot.SendMessage(
                 chatId,
                 ConnectionScenarioTextRepository.TransferToSupport
             );
 
-            // Update state
             state.CurrentStep = ScenarioStep.TransferToSupport;
         }
         else
         {
-            await bot.SendTextMessageAsync(
+            await bot.SendMessage(
                 chatId,
                 "Неизвестный ответ. Пожалуйста, выберите из предложенных вариантов."
             );
@@ -235,35 +245,30 @@ public class ConnectionScenarioStrategy : IScenarioStrategy
     {
         if (data == "PC_CONNECTED_YES")
         {
-            // Show success message
-            await bot.SendTextMessageAsync(
+            await bot.SendMessage(
                 chatId,
-                CommonPhoneConnectionRepository.ThanksMessage
+                CommonConnectionRepository.ThanksMessage
             );
 
-            // Update state to finish
             state.CurrentStep = ScenarioStep.Finish;
         }
         else if (data == "PC_CONNECTED_NO")
         {
-            // Send additional instructions
             var deviceModel = state.SelectedPhoneModel == "MACOS" ? "MACOS" : "WINDOWS";
 
             await _fileService.SendConnectionPhotoAsync(bot, chatId, "PC", deviceModel, 2);
             await _fileService.SendConnectionPhotoAsync(bot, chatId, "PC", deviceModel, 3);
 
-            // Transfer to support
-            await bot.SendTextMessageAsync(
+            await bot.SendMessage(
                 chatId,
                 ConnectionScenarioTextRepository.TransferToSupport
             );
 
-            // Update state
             state.CurrentStep = ScenarioStep.TransferToSupport;
         }
         else
         {
-            await bot.SendTextMessageAsync(
+            await bot.SendMessage(
                 chatId,
                 "Неизвестный ответ. Пожалуйста, выберите из предложенных вариантов."
             );

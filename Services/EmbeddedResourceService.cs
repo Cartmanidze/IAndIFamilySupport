@@ -8,10 +8,16 @@ internal class EmbeddedResourceService : IResourceService
     private readonly Assembly _assembly;
     private readonly ILogger<EmbeddedResourceService> _logger;
 
+    private readonly string[] _resources;
+
     public EmbeddedResourceService(ILogger<EmbeddedResourceService> logger)
     {
         _logger = logger;
         _assembly = Assembly.GetExecutingAssembly();
+
+        _resources = _assembly.GetManifestResourceNames();
+        _logger.LogInformation("Found {Count} embedded resources", _resources.Length);
+        foreach (var resource in _resources) _logger.LogDebug("Embedded resource: {Resource}", resource);
     }
 
     public byte[]? GetResourceBytes(string resourceName)
@@ -65,25 +71,27 @@ internal class EmbeddedResourceService : IResourceService
 
     public IEnumerable<string> GetAvailableResources()
     {
-        return _assembly.GetManifestResourceNames();
+        return _resources;
     }
 
-    private string? GetFullResourceName(string resourceName)
+    private string? GetFullResourceName(string resourcePath)
     {
-        var allResources = _assembly.GetManifestResourceNames();
-        var matchingResources = allResources
-            .Where(r => r.EndsWith(resourceName, StringComparison.OrdinalIgnoreCase))
+        _logger.LogDebug("All available resources: {Resources}",
+            string.Join(", ", _resources));
+
+        var matchingResources = _resources
+            .Where(r => r.Contains(resourcePath, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         if (matchingResources.Count == 0)
         {
-            _logger.LogWarning("No matching resources found for {ResourceName}", resourceName);
+            _logger.LogWarning("No matching resources found for path {ResourcePath}", resourcePath);
             return null;
         }
 
         if (matchingResources.Count > 1)
-            _logger.LogWarning("Multiple matching resources found for {ResourceName}: {MatchingResources}",
-                resourceName, string.Join(", ", matchingResources));
+            _logger.LogWarning("Multiple matching resources found for {ResourcePath}: {MatchingResources}",
+                resourcePath, string.Join(", ", matchingResources));
 
         return matchingResources.First();
     }

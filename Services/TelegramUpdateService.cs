@@ -45,20 +45,34 @@ public class TelegramUpdateService : ITelegramUpdateService
             case UpdateType.Message when update.Message?.From != null:
                 userId = update.Message.From.Id;
                 break;
+
             case UpdateType.CallbackQuery when update.CallbackQuery?.From != null:
                 userId = update.CallbackQuery.From.Id;
                 break;
+
             default:
-                _logger.LogWarning("Unsupported update type: {UpdateType}", update.Type);
+                _logger.LogWarning("Неподдерживаемый тип обновления: {UpdateType}", update.Type);
                 return;
         }
 
         var state = _stateService.GetUserState(userId);
-        var strategy = _strategies.FirstOrDefault(s => s.TargetSteps.Contains(state.CurrentStep));
+
+        var targetStep = state.CurrentStep;
+
+        IScenarioStrategy? strategy = null;
 
         if (strategy == null)
         {
-            _logger.LogWarning("No strategy found for step: {Step}", state.CurrentStep);
+            strategy = _strategies.FirstOrDefault(s => s.TargetSteps.Contains(state.CurrentStep));
+
+            if (strategy != null)
+                _logger.LogInformation("Выбрана стратегия для текущего шага {Step}", state.CurrentStep);
+        }
+
+        if (strategy == null)
+        {
+            _logger.LogWarning("Не найдена стратегия для шага {Step} или целевого шага {TargetStep}",
+                state.CurrentStep, targetStep);
 
             state.CurrentStep = ScenarioStep.Start;
             _stateService.UpdateUserState(state);
@@ -67,7 +81,7 @@ public class TelegramUpdateService : ITelegramUpdateService
 
             if (strategy == null)
             {
-                _logger.LogError("Critical error: No strategy found for Start step");
+                _logger.LogError("Критическая ошибка: не найдена стратегия для начального шага");
                 return;
             }
         }
@@ -79,6 +93,7 @@ public class TelegramUpdateService : ITelegramUpdateService
                 case UpdateType.Message:
                     await strategy.HandleMessageAsync(_botClient, update.Message!, state);
                     break;
+
                 case UpdateType.CallbackQuery:
                     await strategy.HandleCallbackAsync(_botClient, update.CallbackQuery!, state);
                     break;
@@ -86,7 +101,7 @@ public class TelegramUpdateService : ITelegramUpdateService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling update for user {UserId} in step {Step}",
+            _logger.LogError(ex, "Ошибка при обработке обновления для пользователя {UserId} на шаге {Step}",
                 userId, state.CurrentStep);
 
             try
@@ -101,7 +116,7 @@ public class TelegramUpdateService : ITelegramUpdateService
             }
             catch (Exception innerEx)
             {
-                _logger.LogError(innerEx, "Error sending error message to user {UserId}", userId);
+                _logger.LogError(innerEx, "Ошибка при отправке сообщения об ошибке пользователю {UserId}", userId);
             }
         }
     }

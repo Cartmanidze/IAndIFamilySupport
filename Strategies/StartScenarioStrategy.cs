@@ -70,13 +70,13 @@ internal sealed class StartScenarioStrategy : IScenarioStrategy
             await _fileService.SendModelPhotoAsync(bot, chatId, model);
 
             await bot.SendMessage(chatId,
-                $"Подтвердите, пожалуйста, что вы выбрали {ModelHelper.GetUserFriendlyModelName(model)}.",
-                replyMarkup: KeyboardHelper.YesNoMenu($"CONFIRM_RECORDER_{model}", "RECORDER_RESELECT"));
+                $"Подтвердите, пожалуйста, что это точно ваша модель {ModelHelper.GetUserFriendlyModelName(model)}.",
+                replyMarkup: KeyboardHelper.ConfirmMenu($"CONFIRM_RECORDER_{model}", "RESELECT"));
 
             state.CurrentStep = ScenarioStep.ConfirmRecorderModel;
             _stateService.UpdateUserState(state);
         }
-        else if (callback.Data == "RECORDER_RESELECT")
+        else if (callback.Data == "RESELECT")
         {
             await bot.SendMessage(chatId, "Хорошо, выберите другую модель диктофона.",
                 replyMarkup: KeyboardHelper.RecorderModels());

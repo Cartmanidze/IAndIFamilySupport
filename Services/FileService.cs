@@ -10,7 +10,7 @@ internal sealed class FileService : IFileService
     private readonly ILogger<FileService> _logger;
     private readonly Dictionary<string, string> _modelPhotoMap;
     private readonly Dictionary<string, string> _pdfInstructionMap;
-    
+
     private readonly Dictionary<string, string> _photoMap;
     private readonly IResourceService _resourceService;
 
@@ -22,7 +22,7 @@ internal sealed class FileService : IFileService
         var allResources = _resourceService.GetAvailableResources().ToArray();
         _logger.LogInformation("Available resources: {ResourceCount}", allResources.Length);
         foreach (var resource in allResources) _logger.LogDebug("Resource: {ResourceName}", resource);
-        
+
         _photoMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "CONNECTION_PHOTO", "Порядок подключения.jpg" },
@@ -33,16 +33,16 @@ internal sealed class FileService : IFileService
 
         _modelPhotoMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "R8PLUS", "Фото моделий/R8 PLUS.jpg" },
-            { "R3", "Фото моделий/R3.jpg" },
-            { "R8", "Фото моделий/R8.jpg" }
+            { "R8PLUS", "Фото_моделий.R8 PLUS.jpg" },
+            { "R3", "Фото_моделий.R3.jpg" },
+            { "R8", "Фото_моделий.R8.jpg" }
         };
 
         _pdfInstructionMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "R8PLUS", "Инструкции pdf/PLUS +NEW.pdf" },
-            { "R3", "Инструкции pdf/R3 кулон NEW.pdf" },
-            { "R8", "Инструкции pdf/R8 (8,32,64гб) NEW.pdf" }
+            { "R8PLUS", "Инструкции_pdf.PLUS +NEW" },
+            { "R3", "Инструкции_pdf.R3 кулон NEW.pdf" },
+            { "R8", "Инструкции_pdf.R8 (8,32,64гб) NEW.pdf" }
         };
     }
 
@@ -103,7 +103,7 @@ internal sealed class FileService : IFileService
                 await bot.SendMessage(
                     chatId,
                     $"К сожалению, не удалось загрузить PDF инструкцию для модели {ModelHelper.GetUserFriendlyModelName(model)}.");
-                
+
                 var pdfResources = _resourceService.GetAvailableResources()
                     .Where(r => r.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     .ToList();
@@ -113,7 +113,7 @@ internal sealed class FileService : IFileService
 
                 return;
             }
-            
+
             var fileName = model switch
             {
                 "R8PLUS" => "R8_PLUS_инструкция.pdf",
@@ -121,15 +121,15 @@ internal sealed class FileService : IFileService
                 "R8" => "R8_инструкция.pdf",
                 _ => $"{model}_инструкция.pdf"
             };
-            
+
             _logger.LogInformation("Sending PDF instruction for model {Model}, size: {Size} bytes",
                 model, pdfBytes.Length);
 
             using var ms = new MemoryStream(pdfBytes);
             await bot.SendDocument(
-                chatId: chatId,
-                document: new InputFileStream(ms, fileName),
-                caption: $"Инструкция по использованию диктофона {ModelHelper.GetUserFriendlyModelName(model)}");
+                chatId,
+                new InputFileStream(ms, fileName),
+                $"Инструкция по использованию диктофона {ModelHelper.GetUserFriendlyModelName(model)}");
 
             _logger.LogInformation("Successfully sent PDF instruction for model {Model}", model);
         }
@@ -149,13 +149,12 @@ internal sealed class FileService : IFileService
         string folderPath;
         string fileName;
 
-        // Determine the folder path based on device type and model
         if (deviceType == "PHONE")
         {
             folderPath = deviceModel switch
             {
-                "IPHONE_OLD" => "Айфон до 15",
-                "IPHONE_NEW" => "Айфон после 15",
+                "IPHONE_OLD" => "Айфон_до_15",
+                "IPHONE_NEW" => "Айфон_после_15",
                 "SAMSUNG" => "Samsung",
                 "HONOR" => "Honor",
                 "XIAOMI" => "Xiaomi",
@@ -170,7 +169,7 @@ internal sealed class FileService : IFileService
 
             fileName = deviceModel switch
             {
-                "IPHONE_OLD" or "IPHONE_NEW" => step switch
+                "IPHONE_NEW" => step switch
                 {
                     1 => "Порядок подключения.jpg",
                     2 => "Файлы.jpg",
@@ -178,29 +177,32 @@ internal sealed class FileService : IFileService
                     4 => "Record.jpg",
                     _ => "Порядок подключения.jpg"
                 },
-                "SAMSUNG" => step switch
+                "IPHONE_OLD" => step switch
                 {
-                    1 => "1.Порядок подключения.jpg",
-                    2 => "2.папка с диктофоном.jpg",
-                    _ => "1.Порядок подключения.jpg"
+                    1 => "otg.jpg",
+                    2 => "Порядок подключения.jpg",
+                    3 => "Файлы.jpg",
+                    4 => "Untitled.jpg",
+                    5 => "Record.jpg",
+                    _ => "Порядок подключения.jpg"
                 },
                 _ => "Порядок подключения.jpg"
             };
         }
         else
         {
-            folderPath = deviceModel == "MACOS" ? "Подключение к MAC" : "Подключение к WIN";
-            
+            folderPath = deviceModel == "MACOS" ? "Подключение_к_MAC" : "Подключение_к_WIN";
+
             fileName = step switch
             {
-                1 => "1. Порядок подключения.jpg",
-                2 => deviceModel == "MACOS" ? "2. Местонахождение.jpg" : "2. Местоположение.png",
-                3 => deviceModel == "MACOS" ? "3. Пака с диктофоном.jpg" : "3. папка с диктофоном.png",
-                _ => "1. Порядок подключения.jpg"
+                1 => "Порядок подключения.jpg",
+                2 => deviceModel == "MACOS" ? "Местонахождение.jpg" : "Местоположение.png",
+                3 => deviceModel == "MACOS" ? "Пака с диктофоном.jpg" : "папка с диктофоном.png",
+                _ => "Порядок подключения.jpg"
             };
         }
 
-        var resourcePath = folderPath + "/" + fileName;
+        var resourcePath = folderPath + "." + fileName;
         await SendResourcePhotoAsync(bot, chatId, resourcePath, caption);
     }
 
@@ -214,9 +216,9 @@ internal sealed class FileService : IFileService
             {
                 using var ms = new MemoryStream(videoBytes);
                 await bot.SendVideo(
-                    chatId: chatId,
-                    video: new InputFileStream(ms, Path.GetFileName(videoPath)),
-                    caption: caption);
+                    chatId,
+                    new InputFileStream(ms, Path.GetFileName(videoPath)),
+                    caption);
 
                 _logger.LogInformation("Успешно отправлено видео {VideoPath}", videoPath);
             }
@@ -233,7 +235,7 @@ internal sealed class FileService : IFileService
         else
         {
             _logger.LogWarning("Видео {VideoPath} не найдено или пустое", videoPath);
-            
+
             var videoResources = _resourceService.GetAvailableResources()
                 .Where(r => r.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) ||
                             r.EndsWith(".mov", StringComparison.OrdinalIgnoreCase))
@@ -259,9 +261,9 @@ internal sealed class FileService : IFileService
             {
                 using var ms = new MemoryStream(imageBytes);
                 await bot.SendPhoto(
-                    chatId: chatId,
-                    photo: new InputFileStream(ms, Path.GetFileName(resourcePath)),
-                    caption: caption);
+                    chatId,
+                    new InputFileStream(ms, Path.GetFileName(resourcePath)),
+                    caption);
             }
             catch (Exception ex)
             {
@@ -276,9 +278,7 @@ internal sealed class FileService : IFileService
         else
         {
             _logger.LogWarning("Ресурс {ResourcePath} не найден или пустой", resourcePath);
-            
-            var folder = Path.GetDirectoryName(resourcePath)?.Replace('\\', '/');
-            
+
             await bot.SendMessage(
                 chatId,
                 "Фото не найдено в ресурсах. " +

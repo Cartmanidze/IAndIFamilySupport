@@ -1,6 +1,6 @@
 namespace IAndIFamilySupport.API.Repositories;
 
-public static class CommonPhoneConnectionRepository
+public static class CommonConnectionRepository
 {
     /// <summary>
     ///     Вопрос: удалось ли подключить диктофон к телефону?
@@ -26,5 +26,5 @@ public static class CommonPhoneConnectionRepository
     /// <summary>
     ///     Текст о переводе на специалиста техподдержки
     /// </summary>
-    public const string TransferToSupport = "Переводим вас на специалиста  технической поддержки";
+    public const string TransferToSupport = "Переводим вас на специалиста технической поддержки";
 }

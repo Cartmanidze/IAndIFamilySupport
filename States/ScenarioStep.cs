@@ -5,9 +5,11 @@ public enum ScenarioStep
     Start = 0, // /start
     SelectRecorderModel, // Выбор модели (R8 PLUS, R3, R8)
     ConfirmRecorderModel, // Подтверждение выбранной модели
+    ReselectModel, // Перевыбор выбранной модели
     SelectProblem, // Как подключить, Не воспроизводится, Помощь...
     HowToConnectDevice, // К какому устройству пытаетесь подключить?
     HowToConnectPhoneModel, // Уточняем модель телефона
+    HowToConnectPcModel, // Уточняем модель компьютера
     ConfirmPhoneConnected, // "Получилось подключить к телефону?"
     ConfirmPcConnected, // "Получилось подключить к ПК?"
     NotPlayingMenu, // Не воспроизводится запись

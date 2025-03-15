@@ -40,10 +40,22 @@ public class TelegramUpdateService : ITelegramUpdateService
     {
         long userId;
 
+        TelegramUserState? state = null;
+
         switch (update.Type)
         {
             case UpdateType.Message when update.Message?.From != null:
                 userId = update.Message.From.Id;
+                if (update.Message.Text == "/start")
+                {
+                    state = new TelegramUserState
+                    {
+                        CurrentStep = ScenarioStep.Start
+                    };
+                    _stateService.UpdateUserState(state);
+                    return;
+                }
+
                 break;
 
             case UpdateType.CallbackQuery when update.CallbackQuery?.From != null:
@@ -55,7 +67,7 @@ public class TelegramUpdateService : ITelegramUpdateService
                 return;
         }
 
-        var state = _stateService.GetUserState(userId);
+        state ??= _stateService.GetUserState(userId);
 
         var targetStep = state.CurrentStep;
 

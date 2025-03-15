@@ -24,8 +24,12 @@ public static class KeyboardHelper
     {
         return new InlineKeyboardMarkup([
             [
-                InlineKeyboardButton.WithCallbackData("Как подключить?", "PROBLEM_CONNECT"),
-                InlineKeyboardButton.WithCallbackData("Не воспроизводится запись", "PROBLEM_NOTPLAY"),
+                InlineKeyboardButton.WithCallbackData("Как подключить?", "PROBLEM_CONNECT")
+            ],
+            [
+                InlineKeyboardButton.WithCallbackData("Не воспроизводится запись", "PROBLEM_NOTPLAY")
+            ],
+            [
                 InlineKeyboardButton.WithCallbackData("Помощь в настройке", "PROBLEM_SETTINGS")
             ]
         ]);
@@ -111,5 +115,15 @@ public static class KeyboardHelper
         ]);
     }
 
-    // ... и т.д. — Добавляйте нужные клавиатуры для всех ветвей (Настройка MRECSET, гол. активация и прочее).
+    public static InlineKeyboardMarkup PlaybackDeviceMenu()
+    {
+        return new InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton.WithCallbackData("На телефоне", "PLAYBACK_PHONE")
+            ],
+            [
+                InlineKeyboardButton.WithCallbackData("На компьютере", "PLAYBACK_PC")
+            ]
+        ]);
+    }
 }

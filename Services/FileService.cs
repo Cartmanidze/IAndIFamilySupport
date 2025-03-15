@@ -28,7 +28,9 @@ internal sealed class FileService : IFileService
             { "CONNECTION_PHOTO", "Порядок подключения.jpg" },
             { "FILES_FOLDER", "Файлы.jpg" },
             { "UNTITLED_FOLDER", "Untitled.jpg" },
-            { "RECORD_FOLDER", "Record.jpg" }
+            { "RECORD_FOLDER", "Record.jpg" },
+            { "EncodingError", "EncodingError.png" },
+            { "EncodingErrorSolution", "EncodingErrorSolution.png" }
         };
 
         _modelPhotoMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

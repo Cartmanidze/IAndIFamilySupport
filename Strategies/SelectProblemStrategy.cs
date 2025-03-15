@@ -120,16 +120,14 @@ public class SelectProblemStrategy : IScenarioStrategy
         state.SelectedProblem = "PROBLEM_NOTPLAY";
         _logger.LogInformation("Пользователь выбрал проблему с воспроизведением");
 
-        state.CurrentStep = ScenarioStep.NotPlayingMenu;
-        _stateService.UpdateUserState(state);
-
         await bot.SendMessage(
             chatId,
-            "Вот возможные причины, по которым запись может не воспроизводиться:\n" +
-            "1. Файл записи поврежден\n" +
-            "2. Диктофон не подключен правильно к устройству\n" +
-            "3. У вас отсутствуют необходимые кодеки для воспроизведения"
+            "Где вы пытаетесь воспроизвести запись?",
+            replyMarkup: KeyboardHelper.PlaybackDeviceMenu()
         );
+
+        state.CurrentStep = ScenarioStep.NotPlayingMenu;
+        _stateService.UpdateUserState(state);
     }
 
     /// <summary>

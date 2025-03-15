@@ -11,8 +11,7 @@ public enum ScenarioStep
     HowToConnectPcModel, // Уточняем модель компьютера
     ConfirmPhoneConnected, // "Получилось подключить к телефону?"
     ConfirmPcConnected, // "Получилось подключить к ПК?"
-    NotPlayingMenu, // Не воспроизводится запис
-    NotPlayingDeviceSelection, // Выбор устройства воспроизведения (телефон/компьютер)
+    NotPlayingMenu, // Не воспроизводится запись
     NotPlayingErrorType, // Тип ошибки (кодировка или другая)
     NotPlayingSolutionResult, // Результат предложенного решения
     SettingsMenu, // Помощь в настройке

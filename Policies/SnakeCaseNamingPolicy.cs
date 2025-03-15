@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+namespace IAndIFamilySupport.API.Policies;
+
 public class SnakeCaseNamingPolicy : JsonNamingPolicy
 {
     public override string ConvertName(string name)

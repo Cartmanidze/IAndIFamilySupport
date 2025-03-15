@@ -8,6 +8,7 @@ namespace IAndIFamilySupport.API.Services;
 internal sealed class FileService : IFileService
 {
     private readonly ILogger<FileService> _logger;
+    private readonly Dictionary<string, string> _modelHelpPhotoMap;
     private readonly Dictionary<string, string> _modelPhotoMap;
     private readonly Dictionary<string, string> _pdfInstructionMap;
 
@@ -19,14 +20,13 @@ internal sealed class FileService : IFileService
         _resourceService = resourceService;
         _logger = logger;
 
-        var allResources = _resourceService.GetAvailableResources().ToArray();
-        _logger.LogInformation("Available resources: {ResourceCount}", allResources.Length);
-        foreach (var resource in allResources) _logger.LogDebug("Resource: {ResourceName}", resource);
+        LogAvailableResources();
 
+        // Пример маппинга «ключ → реальный файл»
         _photoMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "CONNECTION_PHOTO", "Порядок подключения.jpg" },
-            { "FILES_FOLDER", "Файлы.jpg" },
+            { "CONNECTION_PHOTO", "Connection.jpg" },
+            { "FILES_FOLDER", "Files.jpg" },
             { "UNTITLED_FOLDER", "Untitled.jpg" },
             { "RECORD_FOLDER", "Record.jpg" },
             { "EncodingError", "EncodingError.png" },
@@ -35,18 +35,38 @@ internal sealed class FileService : IFileService
 
         _modelPhotoMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "R8PLUS", "Фото_моделий.R8 PLUS.jpg" },
-            { "R3", "Фото_моделий.R3.jpg" },
-            { "R8", "Фото_моделий.R8.jpg" }
+            { "R8PLUS", "Models.R8PLUS.jpg" },
+            { "R3", "Models.R3.jpg" },
+            { "R8", "Models.R8.jpg" }
+        };
+
+        _modelHelpPhotoMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "R8PLUS", "Help.R8PLUSR3Mrecsrt.png" },
+            { "R3", "Help.R8PLUSR3Mrecsrt.png" },
+            { "R8", "Help.R8Mrecsrt.png" }
         };
 
         _pdfInstructionMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "R8PLUS", "Инструкции_pdf.PLUS +NEW" },
-            { "R3", "Инструкции_pdf.R3 кулон NEW.pdf" },
-            { "R8", "Инструкции_pdf.R8 (8,32,64гб) NEW.pdf" }
+            { "R8PLUS", "Instructions.R8PLUS.pdf" },
+            { "R3", "Instruction.R3.pdf" },
+            { "R8", "Instructions.R8.pdf" }
         };
     }
+
+    #region Logging
+
+    private void LogAvailableResources()
+    {
+        var allResources = _resourceService.GetAvailableResources().ToArray();
+        _logger.LogInformation("Доступные вшитые ресурсы: {ResourceCount}", allResources.Length);
+        foreach (var resource in allResources) _logger.LogDebug("Ресурс: {ResourceName}", resource);
+    }
+
+    #endregion
+
+    #region Public Methods
 
     public async Task SendPhotoAsync(ITelegramBotClient bot, long chatId, string photoKey, string caption = "")
     {
@@ -56,8 +76,7 @@ internal sealed class FileService : IFileService
         }
         else
         {
-            _logger.LogWarning("Фото с ключом {PhotoKey} не найдено в маппинге", photoKey);
-
+            _logger.LogWarning("Фото с ключом {PhotoKey} не найдено в _photoMap", photoKey);
             await bot.SendMessage(
                 chatId,
                 "Фото не найдено. " +
@@ -86,11 +105,11 @@ internal sealed class FileService : IFileService
     {
         try
         {
-            _logger.LogInformation("Attempting to send PDF instruction for model {Model}", model);
+            _logger.LogInformation("Пытаемся отправить PDF-инструкцию для модели {Model}", model);
 
             if (!_pdfInstructionMap.TryGetValue(model, out var pdfPath))
             {
-                _logger.LogWarning("PDF path not found for model {Model}", model);
+                _logger.LogWarning("PDF-файл для модели {Model} не найден в _pdfInstructionMap", model);
                 await bot.SendMessage(
                     chatId,
                     $"К сожалению, не удалось найти PDF инструкцию для модели {ModelHelper.GetUserFriendlyModelName(model)}.");
@@ -98,65 +117,182 @@ internal sealed class FileService : IFileService
             }
 
             var pdfBytes = _resourceService.GetResourceBytes(pdfPath);
-
             if (pdfBytes == null || pdfBytes.Length == 0)
             {
-                _logger.LogWarning("Failed to load PDF file from path {PdfPath}", pdfPath);
+                _logger.LogWarning("Не удалось загрузить PDF-файл по пути {PdfPath}", pdfPath);
                 await bot.SendMessage(
                     chatId,
-                    $"К сожалению, не удалось загрузить PDF инструкцию для модели {ModelHelper.GetUserFriendlyModelName(model)}.");
+                    $"К сожалению, не удалось загрузить PDF-инструкцию для модели {ModelHelper.GetUserFriendlyModelName(model)}."
+                );
 
                 var pdfResources = _resourceService.GetAvailableResources()
                     .Where(r => r.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                _logger.LogInformation("Available PDF resources: {PdfResources}",
+                _logger.LogInformation("Список доступных PDF-ресурсов: {PdfResources}",
                     string.Join(", ", pdfResources));
-
                 return;
             }
 
             var fileName = model switch
             {
-                "R8PLUS" => "R8_PLUS_инструкция.pdf",
-                "R3" => "R3_инструкция.pdf",
-                "R8" => "R8_инструкция.pdf",
-                _ => $"{model}_инструкция.pdf"
+                "R8PLUS" => "Instructions.R8PLUS.pdf",
+                "R3" => "Instruction.R3.pdf",
+                "R8" => "Instructions.R8.pdf",
+                _ => $"Instructions.{model}.pdf"
             };
 
-            _logger.LogInformation("Sending PDF instruction for model {Model}, size: {Size} bytes",
-                model, pdfBytes.Length);
+            _logger.LogInformation("Отправляем PDF-инструкцию для модели {Model}, размер: {Size} байт", model,
+                pdfBytes.Length);
 
             using var ms = new MemoryStream(pdfBytes);
             await bot.SendDocument(
                 chatId,
                 new InputFileStream(ms, fileName),
-                $"Инструкция по использованию диктофона {ModelHelper.GetUserFriendlyModelName(model)}");
+                $"Инструкция к диктофону {ModelHelper.GetUserFriendlyModelName(model)}"
+            );
 
-            _logger.LogInformation("Successfully sent PDF instruction for model {Model}", model);
+            _logger.LogInformation("PDF-инструкция для модели {Model} успешно отправлена", model);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending PDF instruction for model {Model}", model);
-
+            _logger.LogError(ex, "Ошибка при отправке PDF-инструкции для модели {Model}", model);
             await bot.SendMessage(
                 chatId,
-                "Произошла ошибка при отправке PDF инструкции. Пожалуйста, попробуйте позже или обратитесь к специалисту поддержки.");
+                "Произошла ошибка при отправке PDF. Пожалуйста, попробуйте позже или обратитесь в поддержку."
+            );
         }
     }
 
-    public async Task SendConnectionPhotoAsync(ITelegramBotClient bot, long chatId, string deviceType,
-        string deviceModel, int step = 1, string caption = "")
+    public async Task SendConnectionPhotoAsync(
+        ITelegramBotClient bot,
+        long chatId,
+        string deviceType,
+        string deviceModel,
+        int step = 1,
+        string caption = "")
     {
-        string folderPath;
-        string fileName;
+        // Определяем папку
+        var folderPath = ResolveFolderPath(deviceType, deviceModel);
+        // Определяем имя файла для текущего шага
+        var fileName = ResolveConnectionFileName(deviceType, deviceModel, step);
 
-        if (deviceType == "PHONE")
+        var resourcePath = $"{folderPath}.{fileName}";
+        _logger.LogInformation(
+            "Отправляем фото подключения: deviceType={DeviceType}, deviceModel={DeviceModel}, step={Step}, resourcePath={ResourcePath}",
+            deviceType, deviceModel, step, resourcePath
+        );
+
+        await SendResourcePhotoAsync(bot, chatId, resourcePath, caption);
+    }
+
+    public async Task SendVideoAsync(ITelegramBotClient bot, long chatId,
+        string deviceType,
+        string deviceModel, string caption = "")
+    {
+        // Определяем папку
+        var folderPath = ResolveFolderPath(deviceType, deviceModel);
+        const string fileName = "EnableAccessories.mp4";
+        var videoPath = $"{folderPath}.{fileName}";
+        var videoBytes = _resourceService.GetResourceBytes(videoPath);
+        if (videoBytes != null && videoBytes.Length > 0)
         {
-            folderPath = deviceModel switch
+            try
             {
-                "IPHONE_OLD" => "Айфон_до_15",
-                "IPHONE_NEW" => "Айфон_после_15",
+                using var ms = new MemoryStream(videoBytes);
+                await bot.SendVideo(chatId, new InputFileStream(ms, fileName), caption);
+                _logger.LogInformation("Видео {VideoPath} успешно отправлено", videoPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при отправке видео {VideoPath}", videoPath);
+                await bot.SendMessage(
+                    chatId,
+                    $"К сожалению, не удалось отправить видео. {(string.IsNullOrEmpty(caption) ? "" : caption)}"
+                );
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Видео {VideoPath} не найдено или пустое", videoPath);
+            var videoResources = _resourceService.GetAvailableResources()
+                .Where(r => r.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) ||
+                            r.EndsWith(".mov", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            _logger.LogInformation("Доступные видео-ресурсы: {VideoResources}", string.Join(", ", videoResources));
+            await bot.SendMessage(
+                chatId,
+                $"Видео не найдено. {(string.IsNullOrEmpty(caption) ? "" : caption)}"
+            );
+        }
+    }
+
+    public async Task SendHelpPhotoAsync(ITelegramBotClient bot, long chatId, string model, string caption = "")
+    {
+        if (_modelHelpPhotoMap.TryGetValue(model, out var photoPath))
+        {
+            await SendResourcePhotoAsync(bot, chatId, photoPath, caption);
+        }
+        else
+        {
+            _logger.LogWarning("Фото модели {Model} не найдено в маппинге", model);
+
+            await bot.SendMessage(
+                chatId,
+                "Фото модели не найдено. " +
+                (string.IsNullOrEmpty(caption) ? "" : caption));
+        }
+    }
+
+    #endregion
+
+    #region Private Helpers
+
+    private async Task SendResourcePhotoAsync(
+        ITelegramBotClient bot,
+        long chatId,
+        string resourcePath,
+        string caption)
+    {
+        var imageBytes = _resourceService.GetResourceBytes(resourcePath);
+        if (imageBytes is not null && imageBytes.Length > 0)
+        {
+            try
+            {
+                using var ms = new MemoryStream(imageBytes);
+                var fileName = Path.GetFileName(resourcePath);
+
+                await bot.SendPhoto(chatId, new InputFileStream(ms, fileName), caption);
+                _logger.LogInformation("Фото {ResourcePath} успешно отправлено", resourcePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при отправке фото {ResourcePath}", resourcePath);
+                await bot.SendMessage(
+                    chatId,
+                    $"Не удалось отправить фото. {(string.IsNullOrEmpty(caption) ? "" : caption)}"
+                );
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Ресурс {ResourcePath} не найден или пустой", resourcePath);
+            await bot.SendMessage(
+                chatId,
+                $"Фото не найдено в ресурсах. {(string.IsNullOrEmpty(caption) ? "" : caption)}"
+            );
+        }
+    }
+
+    private string ResolveFolderPath(string deviceType, string deviceModel)
+    {
+        // Переводим в верхний регистр для надёжного сравнения
+        if (deviceType.Equals("PHONE", StringComparison.OrdinalIgnoreCase))
+            return deviceModel.ToUpperInvariant() switch
+            {
+                "IPHONE_OLD" => "IPhoneBefore15",
+                "IPHONE_NEW" => "IPhoneAfter15",
                 "SAMSUNG" => "Samsung",
                 "HONOR" => "Honor",
                 "XIAOMI" => "Xiaomi",
@@ -169,122 +305,47 @@ internal sealed class FileService : IFileService
                 _ => "Samsung"
             };
 
-            fileName = deviceModel switch
+        // Если deviceType != PHONE, считаем, что это компьютер (Mac / Win)
+        return deviceModel.Equals("MACOS", StringComparison.OrdinalIgnoreCase)
+            ? "Mac"
+            : "Win";
+    }
+
+    private string ResolveConnectionFileName(string deviceType, string deviceModel, int step)
+    {
+        if (deviceType.Equals("PHONE", StringComparison.OrdinalIgnoreCase))
+            return deviceModel.ToUpperInvariant() switch
             {
                 "IPHONE_NEW" => step switch
                 {
-                    1 => "Порядок подключения.jpg",
-                    2 => "Файлы.jpg",
+                    1 => "Connection.jpg",
+                    2 => "Files.jpg",
                     3 => "Untitled.jpg",
                     4 => "Record.jpg",
-                    _ => "Порядок подключения.jpg"
+                    _ => "Connection.jpg"
                 },
                 "IPHONE_OLD" => step switch
                 {
-                    1 => "otg.jpg",
-                    2 => "Порядок подключения.jpg",
-                    3 => "Файлы.jpg",
+                    1 => "OTG.jpg",
+                    2 => "Connection.jpg",
+                    3 => "Files.jpg",
                     4 => "Untitled.jpg",
                     5 => "Record.jpg",
-                    _ => "Порядок подключения.jpg"
+                    _ => "Connection.jpg"
                 },
-                _ => "Порядок подключения.jpg"
+                _ => "Connection.jpg"
             };
-        }
-        else
+
+        // Mac или Win
+        var isMac = deviceModel.Equals("MACOS", StringComparison.OrdinalIgnoreCase);
+        return step switch
         {
-            folderPath = deviceModel == "MACOS" ? "Подключение_к_MAC" : "Подключение_к_WIN";
-
-            fileName = step switch
-            {
-                1 => "Порядок подключения.jpg",
-                2 => deviceModel == "MACOS" ? "Местонахождение.jpg" : "Местоположение.png",
-                3 => deviceModel == "MACOS" ? "Пака с диктофоном.jpg" : "папка с диктофоном.png",
-                _ => "Порядок подключения.jpg"
-            };
-        }
-
-        var resourcePath = folderPath + "." + fileName;
-        await SendResourcePhotoAsync(bot, chatId, resourcePath, caption);
+            1 => "Connection.jpg",
+            2 => isMac ? "Location.jpg" : "Location.png",
+            3 => isMac ? "Folder.jpg" : "Folder.png",
+            _ => "Connection.jpg"
+        };
     }
 
-    public async Task SendVideoAsync(ITelegramBotClient bot, long chatId, string videoPath, string caption = "")
-    {
-        var videoBytes = _resourceService.GetResourceBytes(videoPath);
-
-        if (videoBytes != null && videoBytes.Length > 0)
-        {
-            try
-            {
-                using var ms = new MemoryStream(videoBytes);
-                await bot.SendVideo(
-                    chatId,
-                    new InputFileStream(ms, Path.GetFileName(videoPath)),
-                    caption);
-
-                _logger.LogInformation("Успешно отправлено видео {VideoPath}", videoPath);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка при отправке видео {VideoPath}", videoPath);
-
-                await bot.SendMessage(
-                    chatId,
-                    "К сожалению, не удалось отправить видео. " +
-                    (string.IsNullOrEmpty(caption) ? "" : caption));
-            }
-        }
-        else
-        {
-            _logger.LogWarning("Видео {VideoPath} не найдено или пустое", videoPath);
-
-            var videoResources = _resourceService.GetAvailableResources()
-                .Where(r => r.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) ||
-                            r.EndsWith(".mov", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            _logger.LogInformation("Доступные видео ресурсы: {VideoResources}",
-                string.Join(", ", videoResources));
-
-            await bot.SendMessage(
-                chatId,
-                "Видео не найдено. " +
-                (string.IsNullOrEmpty(caption) ? "" : caption));
-        }
-    }
-
-    private async Task SendResourcePhotoAsync(ITelegramBotClient bot, long chatId, string resourcePath, string caption)
-    {
-        var imageBytes = _resourceService.GetResourceBytes(resourcePath);
-
-        if (imageBytes != null && imageBytes.Length > 0)
-        {
-            try
-            {
-                using var ms = new MemoryStream(imageBytes);
-                await bot.SendPhoto(
-                    chatId,
-                    new InputFileStream(ms, Path.GetFileName(resourcePath)),
-                    caption);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка при отправке фото {ResourcePath}", resourcePath);
-
-                await bot.SendMessage(
-                    chatId,
-                    "К сожалению, не удалось отправить фото. " +
-                    (string.IsNullOrEmpty(caption) ? "" : caption));
-            }
-        }
-        else
-        {
-            _logger.LogWarning("Ресурс {ResourcePath} не найден или пустой", resourcePath);
-
-            await bot.SendMessage(
-                chatId,
-                "Фото не найдено в ресурсах. " +
-                (string.IsNullOrEmpty(caption) ? "" : caption));
-        }
-    }
+    #endregion
 }

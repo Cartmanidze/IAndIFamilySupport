@@ -11,5 +11,10 @@ public interface IFileService
         int step = 1, string caption = "");
 
     Task SendPdfInstructionAsync(ITelegramBotClient bot, long chatId, string model);
-    Task SendVideoAsync(ITelegramBotClient bot, long chatId, string videoPath, string caption = "");
+
+    Task SendVideoAsync(ITelegramBotClient bot, long chatId,
+        string deviceType,
+        string deviceModel, string caption = "");
+
+    Task SendHelpPhotoAsync(ITelegramBotClient bot, long chatId, string model, string caption = "");
 }

@@ -123,11 +123,6 @@ public static class ConnectionScenarioTextRepository
     public const string NoPhoneModel = "Нет моей модели телефона";
 
     /// <summary>
-    ///     Перевод на специалиста техподдержки
-    /// </summary>
-    public const string TransferToSupport = "Переводим вас на специалиста  технической поддержки";
-
-    /// <summary>
     ///     Рекомендация по включению OTG
     /// </summary>
     public const string OtgActivationRecommendation = "Рекомендация по включению OTG";

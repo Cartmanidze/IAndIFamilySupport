@@ -109,8 +109,8 @@ public static class KeyboardHelper
     {
         return new InlineKeyboardMarkup([
             [
-                InlineKeyboardButton.WithCallbackData("Проблема решена", "PROBLEM_SOLVED"),
-                InlineKeyboardButton.WithCallbackData("Другая ошибка", "PROBLEM_OTHER")
+                InlineKeyboardButton.WithCallbackData("Да", "PROBLEM_SOLVED"),
+                InlineKeyboardButton.WithCallbackData("Нет", "PROBLEM_OTHER")
             ]
         ]);
     }
@@ -125,5 +125,33 @@ public static class KeyboardHelper
                 InlineKeyboardButton.WithCallbackData("На компьютере", "PLAYBACK_PC")
             ]
         ]);
+    }
+
+    public static InlineKeyboardMarkup PlayingError()
+    {
+        var keyboard = new InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton.WithCallbackData("Ошибка кодировки", "ERROR_CODING")
+            ],
+            [
+                InlineKeyboardButton.WithCallbackData("Другая ошибка", "ERROR_OTHER")
+            ]
+        ]);
+
+        return keyboard;
+    }
+
+    public static InlineKeyboardMarkup SettingsHelpMenu()
+    {
+        var keyboard = new InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton.WithCallbackData("Настройка голосовой активации", "VOICE_ACTIVATION")
+            ],
+            [
+                InlineKeyboardButton.WithCallbackData("Другие настройки", "OTHER_SETTINGS")
+            ]
+        ]);
+
+        return keyboard;
     }
 }

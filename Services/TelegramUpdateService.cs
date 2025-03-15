@@ -1,6 +1,7 @@
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.Options;
-using IAndIFamilySupport.API.States;
+using IAndIFamilySupport.API.Routing;
+using MediatR;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -8,128 +9,86 @@ using Telegram.Bot.Types.Enums;
 
 namespace IAndIFamilySupport.API.Services;
 
-public class TelegramUpdateService : ITelegramUpdateService
+public class TelegramUpdateService(
+    ILogger<TelegramUpdateService> logger,
+    CommandRouter router,
+    IMediator mediator,
+    IOptions<TelegramSettings> settings,
+    ITelegramBotClient botClient)
+    : ITelegramUpdateService
 {
-    private readonly TelegramBotClient _botClient;
-    private readonly ILogger<TelegramUpdateService> _logger;
-    private readonly TelegramSettings _settings;
-    private readonly IStateService _stateService;
-    private readonly IEnumerable<IScenarioStrategy> _strategies;
-
-    public TelegramUpdateService(
-        IOptions<TelegramSettings> options,
-        ILogger<TelegramUpdateService> logger,
-        IStateService stateService,
-        IEnumerable<IScenarioStrategy> strategies)
-    {
-        _settings = options.Value;
-        _logger = logger;
-        _stateService = stateService;
-        _strategies = strategies;
-
-        _botClient = new TelegramBotClient(_settings.Token);
-    }
+    private readonly TelegramSettings _settings = settings.Value;
 
     public async Task SetWebhookAsync()
     {
-        _logger.LogInformation("Устанавливаем Webhook на {WebhookUrl}", _settings.WebhookUrl);
-        await _botClient.SetWebhook(_settings.WebhookUrl);
+        logger.LogInformation("Устанавливаем Webhook на {WebhookUrl}", _settings.WebhookUrl);
+        await botClient.SetWebhook(_settings.WebhookUrl);
     }
 
     public async Task HandleUpdateAsync(Update update)
     {
-        long userId;
-
-        TelegramUserState? state = null;
-
-        switch (update.Type)
+        // Пытаемся найти команду
+        var command = router.ResolveCommand(update);
+        if (command == null)
         {
-            case UpdateType.Message when update.Message?.From != null:
-                userId = update.Message.From.Id;
-                if (update.Message.Text == "/start")
-                {
-                    state = new TelegramUserState
-                    {
-                        CurrentStep = ScenarioStep.Start
-                    };
-                    _stateService.UpdateUserState(state);
-                    return;
-                }
-
-                break;
-
-            case UpdateType.CallbackQuery when update.CallbackQuery?.From != null:
-                userId = update.CallbackQuery.From.Id;
-                break;
-
-            default:
-                _logger.LogWarning("Неподдерживаемый тип обновления: {UpdateType}", update.Type);
-                return;
-        }
-
-        state ??= _stateService.GetUserState(userId);
-
-        var targetStep = state.CurrentStep;
-
-        IScenarioStrategy? strategy = null;
-
-        if (strategy == null)
-        {
-            strategy = _strategies.FirstOrDefault(s => s.TargetSteps.Contains(state.CurrentStep));
-
-            if (strategy != null)
-                _logger.LogInformation("Выбрана стратегия для текущего шага {Step}", state.CurrentStep);
-        }
-
-        if (strategy == null)
-        {
-            _logger.LogWarning("Не найдена стратегия для шага {Step} или целевого шага {TargetStep}",
-                state.CurrentStep, targetStep);
-
-            state.CurrentStep = ScenarioStep.Start;
-            _stateService.UpdateUserState(state);
-
-            strategy = _strategies.FirstOrDefault(s => s.TargetSteps.Contains(state.CurrentStep));
-
-            if (strategy == null)
-            {
-                _logger.LogError("Критическая ошибка: не найдена стратегия для начального шага");
-                return;
-            }
+            logger.LogInformation("Не найдена команда для UpdateType={Type}", update.Type);
+            await SendUnknownCommandMessage(update);
+            return;
         }
 
         try
         {
-            switch (update.Type)
-            {
-                case UpdateType.Message:
-                    await strategy.HandleMessageAsync(_botClient, update.Message!, state);
-                    break;
-
-                case UpdateType.CallbackQuery:
-                    await strategy.HandleCallbackAsync(_botClient, update.CallbackQuery!, state);
-                    break;
-            }
+            // Отправляем в MediatR -> он найдёт нужный Handler
+            await mediator.Send(command);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при обработке обновления для пользователя {UserId} на шаге {Step}",
-                userId, state.CurrentStep);
+            logger.LogError(ex, "Ошибка при обработке команды.");
 
-            try
+            switch (update.Type)
             {
-                var chatId = update.Type == UpdateType.Message
-                    ? update.Message!.Chat.Id
-                    : update.CallbackQuery!.Message!.Chat.Id;
+                // Можно сообщить пользователю об ошибке
+                case UpdateType.Message when update.Message != null:
+                    await botClient.SendMessage(update.Message.Chat.Id,
+                        "Произошла ошибка. Попробуйте /start или обратитесь в поддержку.");
+                    break;
+                case UpdateType.CallbackQuery when update.CallbackQuery?.Message != null:
+                    await botClient.SendMessage(update.CallbackQuery.Message.Chat.Id,
+                        "Произошла ошибка. Попробуйте /start или обратитесь в поддержку.");
+                    break;
+            }
+        }
+    }
 
-                await _botClient.SendMessage(
-                    chatId,
-                    "Произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз или напишите /start для начала заново.");
-            }
-            catch (Exception innerEx)
+    /// <summary>
+    ///     Отправляем сообщение пользователю, что команда не распознана.
+    /// </summary>
+    private async Task SendUnknownCommandMessage(Update update)
+    {
+        try
+        {
+            long? chatId = null;
+
+            switch (update.Type)
             {
-                _logger.LogError(innerEx, "Ошибка при отправке сообщения об ошибке пользователю {UserId}", userId);
+                case UpdateType.Message when update.Message != null:
+                    chatId = update.Message.Chat.Id;
+                    break;
+
+                case UpdateType.CallbackQuery when update.CallbackQuery?.Message != null:
+                    chatId = update.CallbackQuery.Message.Chat.Id;
+                    break;
             }
+
+            if (chatId.HasValue)
+                await botClient.SendMessage(
+                    chatId.Value,
+                    "Извините, я не понял вашу команду. Попробуйте /start или обратитесь в поддержку."
+                );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Ошибка при отправке ответа о неизвестной команде");
         }
     }
 }

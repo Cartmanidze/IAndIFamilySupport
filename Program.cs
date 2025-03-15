@@ -1,27 +1,33 @@
+using IAndIFamilySupport.API.Handlers;
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.Middleware;
 using IAndIFamilySupport.API.Options;
+using IAndIFamilySupport.API.Policies;
+using IAndIFamilySupport.API.Routing;
 using IAndIFamilySupport.API.Services;
-using IAndIFamilySupport.API.Strategies;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Telegram.Bot;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<TelegramSettings>(
     builder.Configuration.GetSection("TelegramBot"));
 
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ConfirmRecorderCommandHandler).Assembly));
+
+builder.Services.AddSingleton<ITelegramBotClient>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<TelegramSettings>>();
+    return new TelegramBotClient(options.Value.Token);
+});
+
 builder.Services.AddTransient<ITelegramUpdateService, TelegramUpdateService>();
 builder.Services.AddSingleton<IStateService, InMemoryStateService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddSingleton<IResourceService, EmbeddedResourceService>();
 
-builder.Services.AddScoped<IScenarioStrategy, StartScenarioStrategy>();
-builder.Services.AddScoped<IScenarioStrategy, SelectProblemStrategy>();
-builder.Services.AddScoped<IScenarioStrategy, ConnectionScenarioStrategy>();
-builder.Services.AddScoped<IScenarioStrategy, NotPlayingScenarioStrategy>();
-builder.Services.AddScoped<IScenarioStrategy, SettingsScenarioStrategy>();
-builder.Services.AddScoped<IScenarioStrategy, TransferToSupportStrategy>();
-builder.Services.AddScoped<IScenarioStrategy, FinishScenarioStrategy>();
+builder.Services.AddSingleton<CommandRouter>();
 
 builder.Services
     .AddControllers()

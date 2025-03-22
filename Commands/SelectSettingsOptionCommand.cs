@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -9,4 +9,5 @@ namespace IAndIFamilySupport.API.Commands;
 /// </summary>
 [CallbackRoute("VOICE_ACTIVATION")]
 [CallbackRoute("OTHER_SETTINGS")]
-public record SelectSettingsOptionCommand(Update Update) : IRequest<Unit>;
+public record SelectSettingsOptionCommand(Message Message, CallbackQuery? CallbackQuery)
+    : BaseCommand(Message, CallbackQuery);

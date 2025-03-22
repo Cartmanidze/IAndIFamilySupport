@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -8,4 +8,5 @@ namespace IAndIFamilySupport.API.Commands;
 ///     Пользователь нажал "CONFIRM_RECORDER_{model}"
 /// </summary>
 [CallbackRoutePattern(@"^CONFIRM_RECORDER_(?<model>.+)$")]
-public record ConfirmRecorderCommand(Update Update, string Model) : IRequest<Unit>;
+public record ConfirmRecorderCommand(Message Message, CallbackQuery? CallbackQuery, string Model)
+    : BaseCommand(Message, CallbackQuery);

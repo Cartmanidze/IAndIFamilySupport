@@ -1,8 +1,9 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
 
 [CallbackRoute("RESELECT")]
-public record ReselectRecorderCommand(Update Update) : IRequest<Unit>;
+public record ReselectRecorderCommand(Message Message, CallbackQuery? CallbackQuery)
+    : BaseCommand(Message, CallbackQuery);

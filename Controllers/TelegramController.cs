@@ -6,19 +6,12 @@ namespace IAndIFamilySupport.API.Controllers;
 
 [ApiController]
 [Route("telegram")]
-public class TelegramController : ControllerBase
+public class TelegramController(ITelegramUpdateService telegramService) : ControllerBase
 {
-    private readonly ITelegramUpdateService _telegramService;
-
-    public TelegramController(ITelegramUpdateService telegramService)
-    {
-        _telegramService = telegramService;
-    }
-
     [HttpPost("update")]
     public async Task<IActionResult> Post([FromBody] Update update)
     {
-        await _telegramService.HandleUpdateAsync(update);
+        await telegramService.HandleUpdateAsync(update);
         return Ok();
     }
 }

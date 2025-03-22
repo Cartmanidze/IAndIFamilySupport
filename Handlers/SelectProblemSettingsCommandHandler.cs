@@ -1,5 +1,4 @@
 using IAndIFamilySupport.API.Commands;
-using IAndIFamilySupport.API.Extensions;
 using IAndIFamilySupport.API.Helpers;
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.States;
@@ -16,8 +15,10 @@ public class SelectProblemSettingsCommandHandler(
 {
     public async Task<Unit> Handle(SelectProblemSettingsCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var (chatId, userId) = update.ExtractChatAndUserId();
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
+
         if (chatId == 0 || userId == 0) return Unit.Value;
 
         var state = stateService.GetUserState(userId);
@@ -29,13 +30,14 @@ public class SelectProblemSettingsCommandHandler(
             chatId,
             "Помощь в настройке",
             replyMarkup: KeyboardHelper.SettingsHelpMenu(),
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken);
 
         state.CurrentStep = ScenarioStep.SettingsMenu;
         stateService.UpdateUserState(state);
 
-        if (update.CallbackQuery != null)
-            await bot.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: cancellationToken);
+        if (request.CallbackQuery != null)
+            await bot.AnswerCallbackQuery(request.CallbackQuery.Id, cancellationToken: cancellationToken);
 
         return Unit.Value;
     }

@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -9,4 +9,5 @@ namespace IAndIFamilySupport.API.Commands;
 /// </summary>
 [MessageRoute("Не воспроизводится запись")]
 [CallbackRoute("PROBLEM_NOTPLAY")]
-public record SelectProblemNotPlayCommand(Update Update) : IRequest<Unit>;
+public record SelectProblemNotPlayCommand(Message Message, CallbackQuery? CallbackQuery)
+    : BaseCommand(Message, CallbackQuery);

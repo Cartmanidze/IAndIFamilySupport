@@ -13,9 +13,10 @@ public class SettingsSolutionResultCommandHandler(
 {
     public async Task<Unit> Handle(SettingsSolutionResultCommand request, CancellationToken cancellationToken)
     {
-        var callback = request.Update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
@@ -24,17 +25,17 @@ public class SettingsSolutionResultCommandHandler(
         switch (callback.Data)
         {
             case "SETTINGS_OK":
-                // Завершаем
                 await bot.SendMessage(chatId,
                     "Спасибо за обращение! Если у вас будут другие вопросы — пишите. :)",
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
                 state.CurrentStep = ScenarioStep.Finish;
                 break;
 
             case "SETTINGS_NOT_OK":
-                // Отправляем в поддержку
                 await bot.SendMessage(chatId,
                     CommonConnectionRepository.TransferToSupport,
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
                 state.CurrentStep = ScenarioStep.TransferToSupport;
                 break;

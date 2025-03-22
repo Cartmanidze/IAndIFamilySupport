@@ -17,10 +17,10 @@ public class SelectPcModelCommandHandler(
 {
     public async Task<Unit> Handle(SelectPcModelCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
@@ -31,14 +31,15 @@ public class SelectPcModelCommandHandler(
         var pcModel = data!.StartsWith("PC_") ? data[3..] : data;
 
         // Отправим фото шаги подключения к PC
-        await fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel);
-        await fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel, 2);
-        await fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel, 3);
+        await fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel, 1, businessConnectionId);
+        await fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel, 2, businessConnectionId);
+        await fileService.SendConnectionPhotoAsync(bot, chatId, "PC", pcModel, 3, businessConnectionId);
 
         await bot.SendMessage(
             chatId,
             ConnectionScenarioTextRepository.DidConnectToComputer,
             replyMarkup: KeyboardHelper.YesNoMenu("PC_CONNECTED_YES", "PC_CONNECTED_NO"),
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken
         );
 

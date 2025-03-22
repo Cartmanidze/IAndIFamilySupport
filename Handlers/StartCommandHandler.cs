@@ -14,21 +14,21 @@ public class StartCommandHandler(
 {
     public async Task<Unit> Handle(StartCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var chatId = update.Message!.Chat.Id;
-        var userId = update.Message.From!.Id;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
-        // Достаём состояние
         var state = stateService.GetUserState(userId);
 
-        // Логика из вашего StartScenarioStrategy:
-        // Отправить приветствие, клавиатуру выбора модели, сменить шаг
         await bot.SendMessage(chatId, StartScenarioTextRepository.FirstMessageReply,
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken);
+
         await bot.SendMessage(
             chatId,
             StartScenarioTextRepository.ChooseModelPrompt,
             replyMarkup: KeyboardHelper.RecorderModels(),
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken
         );
 

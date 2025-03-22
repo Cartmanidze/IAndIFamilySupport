@@ -20,10 +20,10 @@ public class SelectDeviceCommandHandler(
 {
     public async Task<Unit> Handle(SelectDeviceCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         // Ответим на коллбек, чтобы убрать "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
@@ -44,6 +44,7 @@ public class SelectDeviceCommandHandler(
                     chatId,
                     ConnectionScenarioTextRepository.SpecifyPhoneModel,
                     replyMarkup: KeyboardHelper.PhoneModelMenu(),
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken
                 );
                 state.CurrentStep = ScenarioStep.HowToConnectPhoneModel;
@@ -55,6 +56,7 @@ public class SelectDeviceCommandHandler(
                     chatId,
                     ConnectionScenarioTextRepository.SpecifyPhoneModel,
                     replyMarkup: KeyboardHelper.PcModelMenu(),
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken
                 );
                 state.CurrentStep = ScenarioStep.HowToConnectPcModel;
@@ -65,6 +67,7 @@ public class SelectDeviceCommandHandler(
                 await bot.SendMessage(
                     chatId,
                     "Неизвестное устройство. Пожалуйста, выберите из предложенных вариантов.",
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken
                 );
                 break;

@@ -15,9 +15,10 @@ public class SelectSettingsOptionCommandHandler(
 {
     public async Task<Unit> Handle(SelectSettingsOptionCommand request, CancellationToken cancellationToken)
     {
-        var callback = request.Update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
@@ -31,6 +32,7 @@ public class SelectSettingsOptionCommandHandler(
                 state.CurrentStep = ScenarioStep.VoiceActivation;
 
                 await bot.SendMessage(chatId, SettingsHelpOptionsRepository.VoiceActivationText,
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
 
                 // Спрашиваем: получилось?
@@ -38,6 +40,7 @@ public class SelectSettingsOptionCommandHandler(
                     chatId,
                     "Получилось настроить?",
                     replyMarkup: KeyboardHelper.YesNoMenu("SETTINGS_OK", "SETTINGS_NOT_OK"),
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken
                 );
 
@@ -50,13 +53,14 @@ public class SelectSettingsOptionCommandHandler(
                 state.CurrentStep = ScenarioStep.OtherSettings;
 
                 // Высылаем инструкцию (BIT/GAIN/PART/TIME) для state.SelectedRecorderModel
-                await SendOtherSettingsInstructions(userId, chatId, cancellationToken);
+                await SendOtherSettingsInstructions(userId, chatId, businessConnectionId, cancellationToken);
 
                 // Спросим: "Получилось?"
                 await bot.SendMessage(
                     chatId,
                     "Получилось настроить?",
                     replyMarkup: KeyboardHelper.YesNoMenu("SETTINGS_OK", "SETTINGS_NOT_OK"),
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken
                 );
 
@@ -69,12 +73,13 @@ public class SelectSettingsOptionCommandHandler(
     }
 
 
-    private async Task SendOtherSettingsInstructions(long userId, long chatId, CancellationToken ct)
+    private async Task SendOtherSettingsInstructions(long userId, long chatId, string? businessConnectionId,
+        CancellationToken ct)
     {
         var state = stateService.GetUserState(userId);
         var model = state.SelectedRecorderModel!; // "R8", "R8PLUS", "R3"
         var otherSettings = SettingsHelpOptionsRepository.OtherSettings[model];
-        await fileService.SendHelpPhotoAsync(bot, chatId, model);
-        await bot.SendMessage(chatId, otherSettings, cancellationToken: ct);
+        await fileService.SendHelpPhotoAsync(bot, chatId, model, businessConnectionId);
+        await bot.SendMessage(chatId, otherSettings, businessConnectionId: businessConnectionId, cancellationToken: ct);
     }
 }

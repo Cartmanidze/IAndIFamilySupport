@@ -15,26 +15,28 @@ public class ConfirmRecorderCommandHandler(
 {
     public async Task<Unit> Handle(ConfirmRecorderCommand request, CancellationToken cancellationToken)
     {
-        var callback = request.Update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         var state = stateService.GetUserState(userId);
         var previouslySelected = state.SelectedRecorderModel;
-        var modelFromCallback = request.Model; // извлекается из RegEx @"^CONFIRM_RECORDER_(?<model>.+)$"
+        var modelFromCallback = request.Model;
 
         if (previouslySelected != modelFromCallback)
         {
-            // Пользователь что-то нажал не то
             await bot.SendMessage(
                 chatId,
                 $"Похоже, вы выбрали другую модель ({ModelHelper.GetUserFriendlyModelName(modelFromCallback)}).",
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
             await bot.SendMessage(
                 chatId,
                 "Давайте уточним модель ещё раз.",
                 replyMarkup: KeyboardHelper.RecorderModels(),
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
 
@@ -42,28 +44,26 @@ public class ConfirmRecorderCommandHandler(
         }
         else
         {
-            // Всё ок
             await bot.SendMessage(
                 chatId,
                 $"Отлично, модель {ModelHelper.GetUserFriendlyModelName(modelFromCallback)} выбрана.",
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
 
-            // Предлагаем следующий шаг
             await bot.SendMessage(
                 chatId,
                 StartScenarioTextRepository.ChooseProblemPrompt,
                 replyMarkup: KeyboardHelper.ProblemMenu(),
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
 
-            // Смена шага
             state.CurrentStep = ScenarioStep.SelectProblem;
         }
 
         stateService.UpdateUserState(state);
 
-        // Не забываем ответить на коллбек
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
         return Unit.Value;
     }

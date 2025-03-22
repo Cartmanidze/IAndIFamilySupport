@@ -16,10 +16,10 @@ public class NotPlayingErrorTypeCommandHandler(
 {
     public async Task<Unit> Handle(NotPlayingErrorTypeCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
@@ -34,6 +34,7 @@ public class NotPlayingErrorTypeCommandHandler(
                 await bot.SendMessage(
                     chatId,
                     "Возможно, плеер(проигрыватель) в телефоне не поддерживает формат WAV. Попробуйте скачать «wav плеер», VLC, KMPlayer и т.д.",
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken
                 );
             }
@@ -42,23 +43,26 @@ public class NotPlayingErrorTypeCommandHandler(
                 await bot.SendMessage(
                     chatId,
                     "Ошибка кодировки. \"Кодировка в не поддерживаемом формате\"",
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken
                 );
 
-                await fileService.SendPhotoAsync(bot, chatId, "EncodingError");
+                await fileService.SendPhotoAsync(bot, chatId, "EncodingError", businessConnectionId);
                 await bot.SendMessage(
                     chatId,
                     "Решение: воспроизводить аудиозаписи на ОС Windows через проигрыватель Windows Media. (Нажать правой кнопкой — «Открыть с помощью» — выбрать «Windows Media»).",
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken
                 );
-                await fileService.SendPhotoAsync(bot, chatId, "EncodingErrorSolution");
+                await fileService.SendPhotoAsync(bot, chatId, "EncodingErrorSolution", businessConnectionId);
             }
 
             // Показываем FinishMenu()
             await bot.SendMessage(
                 chatId,
                 "Проблема решена?",
-                replyMarkup: KeyboardHelper.FinishMenu(), // "Проблема решена"/"Другая ошибка"
+                replyMarkup: KeyboardHelper.FinishMenu(),
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
 
@@ -70,6 +74,7 @@ public class NotPlayingErrorTypeCommandHandler(
             await bot.SendMessage(
                 chatId,
                 CommonConnectionRepository.TransferToSupport,
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
 
@@ -80,6 +85,7 @@ public class NotPlayingErrorTypeCommandHandler(
             await bot.SendMessage(
                 chatId,
                 "Неизвестный тип ошибки. Пожалуйста, выберите один из предложенных вариантов.",
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
         }

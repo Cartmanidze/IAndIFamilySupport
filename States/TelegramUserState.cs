@@ -4,6 +4,12 @@ public class TelegramUserState
 {
     public long UserId { get; set; }
 
+    public required string FirstName { get; set; }
+
+    public string? LastName { get; set; }
+
+    public string? Username { get; set; }
+
     public ScenarioStep CurrentStep { get; set; } = ScenarioStep.Start;
 
     // Модель диктофона (R8_PLUS / R3 / R8)

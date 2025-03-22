@@ -1,5 +1,4 @@
 using IAndIFamilySupport.API.Commands;
-using IAndIFamilySupport.API.Extensions;
 using IAndIFamilySupport.API.Helpers;
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.States;
@@ -16,8 +15,9 @@ public class SelectProblemNotPlayCommandHandler(
 {
     public async Task<Unit> Handle(SelectProblemNotPlayCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var (chatId, userId) = update.ExtractChatAndUserId();
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
         if (chatId == 0 || userId == 0) return Unit.Value;
 
         var state = stateService.GetUserState(userId);
@@ -29,6 +29,7 @@ public class SelectProblemNotPlayCommandHandler(
             chatId,
             "Где вы пытаетесь воспроизвести запись?",
             replyMarkup: KeyboardHelper.PlaybackDeviceMenu(),
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken
         );
 
@@ -36,8 +37,8 @@ public class SelectProblemNotPlayCommandHandler(
         stateService.UpdateUserState(state);
 
         // Закрываем "крутилку", если это был callback
-        if (update.CallbackQuery != null)
-            await bot.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: cancellationToken);
+        if (request.CallbackQuery != null)
+            await bot.AnswerCallbackQuery(request.CallbackQuery.Id, cancellationToken: cancellationToken);
 
         return Unit.Value;
     }

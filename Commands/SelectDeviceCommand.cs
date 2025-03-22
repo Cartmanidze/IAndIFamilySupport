@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -9,4 +9,4 @@ namespace IAndIFamilySupport.API.Commands;
 /// </summary>
 [CallbackRoute("DEVICE_PHONE")]
 [CallbackRoute("DEVICE_PC")]
-public record SelectDeviceCommand(Update Update) : IRequest<Unit>;
+public record SelectDeviceCommand(Message Message, CallbackQuery? CallbackQuery) : BaseCommand(Message, CallbackQuery);

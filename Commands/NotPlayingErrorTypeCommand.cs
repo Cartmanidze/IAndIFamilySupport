@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -9,4 +9,5 @@ namespace IAndIFamilySupport.API.Commands;
 /// </summary>
 [CallbackRoute("ERROR_CODING")]
 [CallbackRoute("ERROR_OTHER")]
-public record NotPlayingErrorTypeCommand(Update Update) : IRequest<Unit>;
+public record NotPlayingErrorTypeCommand(Message Message, CallbackQuery? CallbackQuery)
+    : BaseCommand(Message, CallbackQuery);

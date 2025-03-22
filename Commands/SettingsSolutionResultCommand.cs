@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -10,4 +10,5 @@ namespace IAndIFamilySupport.API.Commands;
 /// </summary>
 [CallbackRoute("SETTINGS_OK")]
 [CallbackRoute("SETTINGS_NOT_OK")]
-public record SettingsSolutionResultCommand(Update Update) : IRequest<Unit>;
+public record SettingsSolutionResultCommand(Message Message, CallbackQuery? CallbackQuery)
+    : BaseCommand(Message, CallbackQuery);

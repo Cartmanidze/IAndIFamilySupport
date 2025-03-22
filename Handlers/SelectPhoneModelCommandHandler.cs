@@ -17,10 +17,10 @@ public class SelectPhoneModelCommandHandler(
 {
     public async Task<Unit> Handle(SelectPhoneModelCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
@@ -39,6 +39,7 @@ public class SelectPhoneModelCommandHandler(
             await bot.SendMessage(
                 chatId,
                 CommonConnectionRepository.TransferToSupport,
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
             state.CurrentStep = ScenarioStep.TransferToSupport;
@@ -46,38 +47,44 @@ public class SelectPhoneModelCommandHandler(
         else
         {
             // Отправляем фото подключения
-            await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel);
+            await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 1, businessConnectionId);
 
             // Если iPhone_old, дополнительно сообщим про OTG
             if (phoneModel == "IPHONE_OLD")
                 await bot.SendMessage(chatId, ConnectionScenarioTextRepository.NeededOtg,
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
 
             if (phoneModel is "IPHONE_OLD" or "IPHONE_NEW")
             {
                 // Дополнительные фото
-                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 2);
-                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 3);
-                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 4);
+                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 2, businessConnectionId);
+                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 3, businessConnectionId);
+                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 4, businessConnectionId);
 
                 if (phoneModel == "IPHONE_OLD")
-                    await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 5);
+                    await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 5,
+                        businessConnectionId);
 
                 await bot.SendMessage(chatId, AccessoriesCheckRepository.CheckAccessories,
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
 
-                await fileService.SendVideoAsync(bot, chatId, "PHONE", phoneModel);
+                await fileService.SendVideoAsync(bot, chatId, "PHONE", phoneModel, businessConnectionId);
             }
             else
             {
                 // Android-модели
                 await bot.SendMessage(chatId, ConnectionScenarioTextRepository.OtgActivationRecommendation,
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
                 await bot.SendMessage(chatId, ConnectionScenarioTextRepository.GetOtgActivationInstruction(phoneModel),
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
             }
 
             await bot.SendMessage(chatId, ConnectionScenarioTextRepository.DictaphoneFolderLocation,
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken);
 
             // Спросим, получилось ли
@@ -85,6 +92,7 @@ public class SelectPhoneModelCommandHandler(
                 chatId,
                 CommonConnectionRepository.DidConnectToPhone,
                 replyMarkup: KeyboardHelper.YesNoMenu("PHONE_CONNECTED_YES", "PHONE_CONNECTED_NO"),
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
 

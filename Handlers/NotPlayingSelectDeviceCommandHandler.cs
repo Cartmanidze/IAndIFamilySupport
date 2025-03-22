@@ -15,10 +15,10 @@ public class NotPlayingSelectDeviceCommandHandler(
 {
     public async Task<Unit> Handle(NotPlayingSelectDeviceCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
@@ -41,6 +41,7 @@ public class NotPlayingSelectDeviceCommandHandler(
             chatId,
             "Какую ошибку вы получаете?",
             replyMarkup: KeyboardHelper.PlayingError(),
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken
         );
 

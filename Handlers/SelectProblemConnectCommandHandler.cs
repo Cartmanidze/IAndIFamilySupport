@@ -1,5 +1,4 @@
 using IAndIFamilySupport.API.Commands;
-using IAndIFamilySupport.API.Extensions;
 using IAndIFamilySupport.API.Helpers;
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.Repositories;
@@ -20,8 +19,9 @@ public class SelectProblemConnectCommandHandler(
 {
     public async Task<Unit> Handle(SelectProblemConnectCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var (chatId, userId) = update.ExtractChatAndUserId();
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
         if (chatId == 0 || userId == 0) return Unit.Value;
 
         var state = stateService.GetUserState(userId);
@@ -34,6 +34,7 @@ public class SelectProblemConnectCommandHandler(
             chatId,
             ConnectionScenarioTextRepository.WhichDeviceToConnect,
             replyMarkup: KeyboardHelper.DeviceMenu(),
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken
         );
 
@@ -41,8 +42,8 @@ public class SelectProblemConnectCommandHandler(
         stateService.UpdateUserState(state);
 
         // Если была CallbackQuery, убираем "крутилку"
-        if (update.CallbackQuery != null)
-            await bot.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: cancellationToken);
+        if (request.CallbackQuery != null)
+            await bot.AnswerCallbackQuery(request.CallbackQuery.Id, cancellationToken: cancellationToken);
 
         return Unit.Value;
     }

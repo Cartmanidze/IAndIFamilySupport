@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -9,4 +9,4 @@ namespace IAndIFamilySupport.API.Commands;
 ///     учитывая выбранную модель (state.SelectedRecorderModel).
 /// </summary>
 [CallbackRoute("DO_OTHER_SETTINGS")]
-public record OtherSettingsCommand(Update Update) : IRequest<Unit>;
+public record OtherSettingsCommand(Message Message, CallbackQuery? CallbackQuery) : BaseCommand(Message, CallbackQuery);

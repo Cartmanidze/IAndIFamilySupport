@@ -68,27 +68,28 @@ internal sealed class FileService : IFileService
 
     #region Public Methods
 
-    public async Task SendPhotoAsync(ITelegramBotClient bot, long chatId, string photoKey, string caption = "")
+    public async Task SendPhotoAsync(ITelegramBotClient bot, long chatId, string photoKey, string? businessConnectionId)
     {
         if (_photoMap.TryGetValue(photoKey, out var photoPath))
         {
-            await SendResourcePhotoAsync(bot, chatId, photoPath, caption);
+            await SendResourcePhotoAsync(bot, chatId, photoPath, businessConnectionId);
         }
         else
         {
             _logger.LogWarning("Фото с ключом {PhotoKey} не найдено в _photoMap", photoKey);
             await bot.SendMessage(
                 chatId,
-                "Фото не найдено. " +
-                (string.IsNullOrEmpty(caption) ? "" : caption));
+                "Фото не найдено",
+                businessConnectionId: businessConnectionId);
         }
     }
 
-    public async Task SendModelPhotoAsync(ITelegramBotClient bot, long chatId, string model, string caption = "")
+    public async Task SendModelPhotoAsync(ITelegramBotClient bot, long chatId, string model,
+        string? businessConnectionId)
     {
         if (_modelPhotoMap.TryGetValue(model, out var photoPath))
         {
-            await SendResourcePhotoAsync(bot, chatId, photoPath, caption);
+            await SendResourcePhotoAsync(bot, chatId, photoPath, businessConnectionId);
         }
         else
         {
@@ -96,12 +97,14 @@ internal sealed class FileService : IFileService
 
             await bot.SendMessage(
                 chatId,
-                "Фото модели не найдено. " +
-                (string.IsNullOrEmpty(caption) ? "" : caption));
+                "Фото модели не найдено",
+                businessConnectionId: businessConnectionId
+            );
         }
     }
 
-    public async Task SendPdfInstructionAsync(ITelegramBotClient bot, long chatId, string model)
+    public async Task SendPdfInstructionAsync(ITelegramBotClient bot, long chatId, string model,
+        string? businessConnectionId)
     {
         try
         {
@@ -112,7 +115,8 @@ internal sealed class FileService : IFileService
                 _logger.LogWarning("PDF-файл для модели {Model} не найден в _pdfInstructionMap", model);
                 await bot.SendMessage(
                     chatId,
-                    $"К сожалению, не удалось найти PDF инструкцию для модели {ModelHelper.GetUserFriendlyModelName(model)}.");
+                    $"К сожалению, не удалось найти PDF инструкцию для модели {ModelHelper.GetUserFriendlyModelName(model)}.",
+                    businessConnectionId: businessConnectionId);
                 return;
             }
 
@@ -122,7 +126,8 @@ internal sealed class FileService : IFileService
                 _logger.LogWarning("Не удалось загрузить PDF-файл по пути {PdfPath}", pdfPath);
                 await bot.SendMessage(
                     chatId,
-                    $"К сожалению, не удалось загрузить PDF-инструкцию для модели {ModelHelper.GetUserFriendlyModelName(model)}."
+                    $"К сожалению, не удалось загрузить PDF-инструкцию для модели {ModelHelper.GetUserFriendlyModelName(model)}.",
+                    businessConnectionId: businessConnectionId
                 );
 
                 var pdfResources = _resourceService.GetAvailableResources()
@@ -149,7 +154,8 @@ internal sealed class FileService : IFileService
             await bot.SendDocument(
                 chatId,
                 new InputFileStream(ms, fileName),
-                $"Инструкция к диктофону {ModelHelper.GetUserFriendlyModelName(model)}"
+                $"Инструкция к диктофону {ModelHelper.GetUserFriendlyModelName(model)}",
+                businessConnectionId: businessConnectionId
             );
 
             _logger.LogInformation("PDF-инструкция для модели {Model} успешно отправлена", model);
@@ -159,7 +165,8 @@ internal sealed class FileService : IFileService
             _logger.LogError(ex, "Ошибка при отправке PDF-инструкции для модели {Model}", model);
             await bot.SendMessage(
                 chatId,
-                "Произошла ошибка при отправке PDF. Пожалуйста, попробуйте позже или обратитесь в поддержку."
+                "Произошла ошибка при отправке PDF. Пожалуйста, попробуйте позже или обратитесь в поддержку.",
+                businessConnectionId: businessConnectionId
             );
         }
     }
@@ -169,8 +176,8 @@ internal sealed class FileService : IFileService
         long chatId,
         string deviceType,
         string deviceModel,
-        int step = 1,
-        string caption = "")
+        int step,
+        string? businessConnectionId)
     {
         // Определяем папку
         var folderPath = ResolveFolderPath(deviceType, deviceModel);
@@ -183,12 +190,13 @@ internal sealed class FileService : IFileService
             deviceType, deviceModel, step, resourcePath
         );
 
-        await SendResourcePhotoAsync(bot, chatId, resourcePath, caption);
+        await SendResourcePhotoAsync(bot, chatId, resourcePath, businessConnectionId);
     }
 
     public async Task SendVideoAsync(ITelegramBotClient bot, long chatId,
         string deviceType,
-        string deviceModel, string caption = "")
+        string deviceModel,
+        string? businessConnectionId)
     {
         // Определяем папку
         var folderPath = ResolveFolderPath(deviceType, deviceModel);
@@ -200,7 +208,8 @@ internal sealed class FileService : IFileService
             try
             {
                 using var ms = new MemoryStream(videoBytes);
-                await bot.SendVideo(chatId, new InputFileStream(ms, fileName), caption);
+                await bot.SendVideo(chatId, new InputFileStream(ms, fileName),
+                    businessConnectionId: businessConnectionId);
                 _logger.LogInformation("Видео {VideoPath} успешно отправлено", videoPath);
             }
             catch (Exception ex)
@@ -208,7 +217,8 @@ internal sealed class FileService : IFileService
                 _logger.LogError(ex, "Ошибка при отправке видео {VideoPath}", videoPath);
                 await bot.SendMessage(
                     chatId,
-                    $"К сожалению, не удалось отправить видео. {(string.IsNullOrEmpty(caption) ? "" : caption)}"
+                    "К сожалению, не удалось отправить видео",
+                    businessConnectionId: businessConnectionId
                 );
             }
         }
@@ -223,16 +233,18 @@ internal sealed class FileService : IFileService
             _logger.LogInformation("Доступные видео-ресурсы: {VideoResources}", string.Join(", ", videoResources));
             await bot.SendMessage(
                 chatId,
-                $"Видео не найдено. {(string.IsNullOrEmpty(caption) ? "" : caption)}"
+                "Видео не найдено.",
+                businessConnectionId: businessConnectionId
             );
         }
     }
 
-    public async Task SendHelpPhotoAsync(ITelegramBotClient bot, long chatId, string model, string caption = "")
+    public async Task SendHelpPhotoAsync(ITelegramBotClient bot, long chatId, string model,
+        string? businessConnectionId)
     {
         if (_modelHelpPhotoMap.TryGetValue(model, out var photoPath))
         {
-            await SendResourcePhotoAsync(bot, chatId, photoPath, caption);
+            await SendResourcePhotoAsync(bot, chatId, photoPath, businessConnectionId);
         }
         else
         {
@@ -240,8 +252,8 @@ internal sealed class FileService : IFileService
 
             await bot.SendMessage(
                 chatId,
-                "Фото модели не найдено. " +
-                (string.IsNullOrEmpty(caption) ? "" : caption));
+                "Фото модели не найдено.",
+                businessConnectionId: businessConnectionId);
         }
     }
 
@@ -253,7 +265,7 @@ internal sealed class FileService : IFileService
         ITelegramBotClient bot,
         long chatId,
         string resourcePath,
-        string caption)
+        string? businessConnectionId)
     {
         var imageBytes = _resourceService.GetResourceBytes(resourcePath);
         if (imageBytes is not null && imageBytes.Length > 0)
@@ -263,7 +275,8 @@ internal sealed class FileService : IFileService
                 using var ms = new MemoryStream(imageBytes);
                 var fileName = Path.GetFileName(resourcePath);
 
-                await bot.SendPhoto(chatId, new InputFileStream(ms, fileName), caption);
+                await bot.SendPhoto(chatId, new InputFileStream(ms, fileName),
+                    businessConnectionId: businessConnectionId);
                 _logger.LogInformation("Фото {ResourcePath} успешно отправлено", resourcePath);
             }
             catch (Exception ex)
@@ -271,7 +284,8 @@ internal sealed class FileService : IFileService
                 _logger.LogError(ex, "Ошибка при отправке фото {ResourcePath}", resourcePath);
                 await bot.SendMessage(
                     chatId,
-                    $"Не удалось отправить фото. {(string.IsNullOrEmpty(caption) ? "" : caption)}"
+                    "Не удалось отправить фото",
+                    businessConnectionId: businessConnectionId
                 );
             }
         }
@@ -280,7 +294,8 @@ internal sealed class FileService : IFileService
             _logger.LogWarning("Ресурс {ResourcePath} не найден или пустой", resourcePath);
             await bot.SendMessage(
                 chatId,
-                $"Фото не найдено в ресурсах. {(string.IsNullOrEmpty(caption) ? "" : caption)}"
+                "Фото не найдено в ресурсах",
+                businessConnectionId: businessConnectionId
             );
         }
     }

@@ -14,16 +14,15 @@ public class SupportCallbackCommandHandler(
 {
     public async Task<Unit> Handle(SupportCallbackCommand request, CancellationToken cancellationToken)
     {
-        var callback = request.Update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
-        // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
         var state = stateService.GetUserState(userId);
         if (state.CurrentStep != ScenarioStep.TransferToSupport)
-            // Если не в поддержке, игнорируем или что-то отвечаем
             return Unit.Value;
 
         var data = callback.Data;
@@ -41,6 +40,7 @@ public class SupportCallbackCommandHandler(
             await bot.SendMessage(
                 chatId,
                 "Начинаем заново. Отправьте /start для запуска бота.",
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
         }
@@ -50,6 +50,7 @@ public class SupportCallbackCommandHandler(
             await bot.SendMessage(
                 chatId,
                 "Ваш запрос зарегистрирован. Специалист свяжется с вами в ближайшее время.",
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
         }

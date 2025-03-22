@@ -15,10 +15,10 @@ public class SelectRecorderCommandHandler(
 {
     public async Task<Unit> Handle(SelectRecorderCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         // Вот тут "Model" берётся из группы "?<model>" из RegEx @"^RECORDER_(?<model>.+)$"
         var selectedModel = request.Model;
@@ -32,16 +32,18 @@ public class SelectRecorderCommandHandler(
         // Сообщаем пользователю
         await bot.SendMessage(chatId,
             $"Выбрана модель диктофона: {ModelHelper.GetUserFriendlyModelName(selectedModel)}",
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken);
 
         // Отправляем фото
-        await fileService.SendModelPhotoAsync(bot, chatId, selectedModel);
+        await fileService.SendModelPhotoAsync(bot, chatId, selectedModel, businessConnectionId);
 
         // Предлагаем подтвердить
         await bot.SendMessage(
             chatId,
             $"Подтвердите, что это точно ваша модель {ModelHelper.GetUserFriendlyModelName(selectedModel)}.",
             replyMarkup: KeyboardHelper.ConfirmMenu($"CONFIRM_RECORDER_{selectedModel}", "RESELECT"),
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken
         );
 

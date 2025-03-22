@@ -13,9 +13,10 @@ public class ReselectRecorderCommandHandler(
 {
     public async Task<Unit> Handle(ReselectRecorderCommand request, CancellationToken cancellationToken)
     {
-        var callback = request.Update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         var state = stateService.GetUserState(userId);
         state.CurrentStep = ScenarioStep.SelectRecorderModel;
@@ -24,6 +25,7 @@ public class ReselectRecorderCommandHandler(
         await bot.SendMessage(
             chatId,
             "Хорошо, выберите другую модель диктофона.",
+            businessConnectionId: businessConnectionId,
             replyMarkup: KeyboardHelper.RecorderModels(),
             cancellationToken: cancellationToken
         );

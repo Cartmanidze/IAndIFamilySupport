@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -9,4 +9,5 @@ namespace IAndIFamilySupport.API.Commands;
 /// </summary>
 [CallbackRoute("PLAYBACK_PHONE")]
 [CallbackRoute("PLAYBACK_PC")]
-public record NotPlayingSelectDeviceCommand(Update Update) : IRequest<Unit>;
+public record NotPlayingSelectDeviceCommand(Message Message, CallbackQuery? CallbackQuery)
+    : BaseCommand(Message, CallbackQuery);

@@ -14,10 +14,10 @@ public class ConfirmPhoneConnectionCommandHandler(
 {
     public async Task<Unit> Handle(ConfirmPhoneConnectionCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
@@ -29,6 +29,7 @@ public class ConfirmPhoneConnectionCommandHandler(
             await bot.SendMessage(
                 chatId,
                 CommonConnectionRepository.ThanksMessage,
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
             state.CurrentStep = ScenarioStep.Finish;
@@ -38,6 +39,7 @@ public class ConfirmPhoneConnectionCommandHandler(
             await bot.SendMessage(
                 chatId,
                 CommonConnectionRepository.TransferToSupport,
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
             state.CurrentStep = ScenarioStep.TransferToSupport;
@@ -47,6 +49,7 @@ public class ConfirmPhoneConnectionCommandHandler(
             await bot.SendMessage(
                 chatId,
                 "Неизвестный ответ. Пожалуйста, выберите из предложенных вариантов.",
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
         }

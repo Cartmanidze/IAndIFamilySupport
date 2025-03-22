@@ -27,10 +27,10 @@ public class ConfirmPcConnectionCommandHandler
 
     public async Task<Unit> Handle(ConfirmPcConnectionCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         // Убираем "крутилку"
         await _bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
@@ -43,6 +43,7 @@ public class ConfirmPcConnectionCommandHandler
             await _bot.SendMessage(
                 chatId,
                 CommonConnectionRepository.ThanksMessage,
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
             state.CurrentStep = ScenarioStep.Finish;
@@ -53,12 +54,13 @@ public class ConfirmPcConnectionCommandHandler
             var deviceModel = state.SelectedPhoneModel == "MACOS" ? "MACOS" : "WINDOWS";
 
             // Отправим ещё пару фото
-            await _fileService.SendConnectionPhotoAsync(_bot, chatId, "PC", deviceModel, 2);
-            await _fileService.SendConnectionPhotoAsync(_bot, chatId, "PC", deviceModel, 3);
+            await _fileService.SendConnectionPhotoAsync(_bot, chatId, "PC", deviceModel, 2, businessConnectionId);
+            await _fileService.SendConnectionPhotoAsync(_bot, chatId, "PC", deviceModel, 3, businessConnectionId);
 
             await _bot.SendMessage(
                 chatId,
                 CommonConnectionRepository.TransferToSupport,
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
 
@@ -69,6 +71,7 @@ public class ConfirmPcConnectionCommandHandler
             await _bot.SendMessage(
                 chatId,
                 "Неизвестный ответ. Пожалуйста, выберите из предложенных вариантов.",
+                businessConnectionId: businessConnectionId,
                 cancellationToken: cancellationToken
             );
         }

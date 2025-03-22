@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -10,4 +10,5 @@ namespace IAndIFamilySupport.API.Commands;
 [MessageRoute("Как подключить?")] // текстовое сообщение
 [MessageRoute("/как подключить")] // если хотите ещё вариант
 [CallbackRoute("PROBLEM_CONNECT")] // callback data
-public record SelectProblemConnectCommand(Update Update) : IRequest<Unit>;
+public record SelectProblemConnectCommand(Message Message, CallbackQuery? CallbackQuery)
+    : BaseCommand(Message, CallbackQuery);

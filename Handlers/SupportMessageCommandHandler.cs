@@ -17,28 +17,25 @@ public class SupportMessageCommandHandler(
 {
     public async Task<Unit> Handle(SupportMessageCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var message = update.Message!;
-        var chatId = message.Chat.Id;
-        var userId = message.From?.Id ?? 0;
+        var chatId = request.Message.Chat.Id;
+        var userId = request.Message.Id;
+        var businessConnectionId = request.Message.BusinessConnectionId;
 
-        // Проверяем, действительно ли пользователь находится на TransferToSupport
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId) ?? stateService.GetUserState(chatId);
 
-        // Логируем сообщение
         logger.LogInformation(
             "Пользователь {UserId} (шаг TransferToSupport) отправил сообщение: {MessageText}",
-            userId, message.Text
+            userId, request.Message.Text
         );
 
-        // Отвечаем
         await bot.SendMessage(
             chatId,
             "Спасибо за ваше сообщение. Наш специалист обработает его и свяжется с вами в ближайшее время.",
+            businessConnectionId: businessConnectionId,
             cancellationToken: cancellationToken
         );
 
-        state.CurrentStep = ScenarioStep.Start;
+        state!.CurrentStep = ScenarioStep.Start;
 
         return Unit.Value;
     }

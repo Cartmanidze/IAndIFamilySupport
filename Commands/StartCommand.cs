@@ -1,5 +1,5 @@
 using IAndIFamilySupport.API.Attributes;
-using MediatR;
+using IAndIFamilySupport.API.Commands.Base;
 using Telegram.Bot.Types;
 
 namespace IAndIFamilySupport.API.Commands;
@@ -8,4 +8,4 @@ namespace IAndIFamilySupport.API.Commands;
 ///     Команда: пользователь ввёл /start.
 /// </summary>
 [MessageRoute("/start")]
-public record StartCommand(Update Update) : IRequest<Unit>;
+public record StartCommand(Message Message, CallbackQuery? CallbackQuery) : BaseCommand(Message, CallbackQuery);

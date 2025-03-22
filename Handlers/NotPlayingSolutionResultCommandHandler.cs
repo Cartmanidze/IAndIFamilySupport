@@ -15,10 +15,10 @@ public class NotPlayingSolutionResultCommandHandler(
 {
     public async Task<Unit> Handle(NotPlayingSolutionResultCommand request, CancellationToken cancellationToken)
     {
-        var update = request.Update;
-        var callback = update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
-        var userId = callback.From.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var userId = request.GetUserId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
@@ -29,11 +29,13 @@ public class NotPlayingSolutionResultCommandHandler(
         {
             case "PROBLEM_SOLVED":
                 await bot.SendMessage(chatId, CommonConnectionRepository.ThanksMessage,
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
                 state.CurrentStep = ScenarioStep.Finish;
                 break;
             case "PROBLEM_OTHER":
                 await bot.SendMessage(chatId, CommonConnectionRepository.TransferToSupport,
+                    businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
                 state.CurrentStep = ScenarioStep.TransferToSupport;
                 break;
@@ -41,6 +43,7 @@ public class NotPlayingSolutionResultCommandHandler(
                 await bot.SendMessage(
                     chatId,
                     "Неизвестный выбор. Пожалуйста, выберите один из предложенных вариантов.",
+                    businessConnectionId: businessConnectionId,
                     replyMarkup: KeyboardHelper.FinishMenu(),
                     cancellationToken: cancellationToken
                 );

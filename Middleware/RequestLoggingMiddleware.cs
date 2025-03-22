@@ -1,34 +1,24 @@
+using System.Text;
+
 namespace IAndIFamilySupport.API.Middleware;
 
-public class RequestLoggingMiddleware
+public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<RequestLoggingMiddleware> _logger;
-    
-    public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-    
     public async Task Invoke(HttpContext context)
     {
-        // Разрешаем повторное чтение тела запроса
         context.Request.EnableBuffering();
 
-        // Читаем тело запроса
         using (var reader = new StreamReader(
-                   context.Request.Body, 
-                   encoding: System.Text.Encoding.UTF8, 
-                   detectEncodingFromByteOrderMarks: false, 
+                   context.Request.Body,
+                   Encoding.UTF8,
+                   false,
                    leaveOpen: true))
         {
             var body = await reader.ReadToEndAsync();
-            _logger.LogInformation("Получен запрос: {Body}", body);
-            // Сброс позиции потока для последующего чтения
+            logger.LogInformation("Получен запрос: {Body}", body);
             context.Request.Body.Position = 0;
         }
-        
-        await _next(context);
+
+        await next(context);
     }
 }

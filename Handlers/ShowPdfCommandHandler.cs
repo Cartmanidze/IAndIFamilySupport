@@ -11,14 +11,14 @@ public class ShowPdfCommandHandler(
 {
     public async Task<Unit> Handle(ShowPdfCommand request, CancellationToken cancellationToken)
     {
-        var callback = request.Update.CallbackQuery!;
-        var chatId = callback.Message!.Chat.Id;
+        var callback = request.CallbackQuery!;
+        var chatId = request.GetChatId();
+        var businessConnectionId = request.GetBusinessConnectionId();
 
-        // request.Model = "R8PLUS" и т.п.
-        await fileService.SendPdfInstructionAsync(bot, chatId, request.Model);
+        await fileService.SendPdfInstructionAsync(bot, chatId, request.Model, businessConnectionId);
 
-        // Можно отправить дополнительное сообщение, если хотите
-        await bot.SendMessage(chatId, "Инструкция отправлена!", cancellationToken: cancellationToken);
+        await bot.SendMessage(chatId, "Инструкция отправлена!", businessConnectionId: businessConnectionId,
+            cancellationToken: cancellationToken);
 
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
         return Unit.Value;

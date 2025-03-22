@@ -7,13 +7,12 @@ using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.States;
 using MediatR;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 namespace IAndIFamilySupport.API.Routing;
 
 public class CommandRouter
 {
-    private readonly List<(Regex Pattern, Type CommandType)> _callbackPatternRoutes = new();
+    private readonly List<(Regex Pattern, Type CommandType)> _callbackPatternRoutes = [];
     private readonly Dictionary<string, Type> _callbackRoutes = new();
     private readonly Dictionary<string, Type> _messageRoutes = new();
     private readonly IStateService _stateService;
@@ -49,78 +48,61 @@ public class CommandRouter
 
     public IRequest<Unit>? ResolveCommand(Update update)
     {
-        // 1. Пытаемся определить userId
-        var userData = update.ExtractChatAndUserId();
+        var user = update.ExtractUser();
 
-        var userId = userData.userId;
-
-        if (userId == 0)
-            // Не смогли определить пользователя — возможно, System message
+        if (user == null)
             return null;
 
-        // 2. Получаем текущее состояние
-        var state = _stateService.GetUserState(userId);
+        var state = _stateService.GetOrAddUserState(user);
 
-        // 3. Если пользователь на шаге TransferToSupport — тогда обрабатываем 
-        //    через "команды поддержки", а не обычный словарь.
-        if (state.CurrentStep == ScenarioStep.TransferToSupport) return ResolveSupportCommand(update);
-
-        // 4. Если пользователь НЕ в поддержке — работаем по обычным правилам
-
-        // === Обработка обычных сообщений ===
         if (update.Message?.Text != null)
         {
             var text = update.Message.Text;
+            if (state.CurrentStep == ScenarioStep.TransferToSupport) return new SupportMessageCommand(update.Message);
+
             if (_messageRoutes.TryGetValue(text, out var cmdType))
-                return Activator.CreateInstance(cmdType, update) as IRequest<Unit>;
+                return Activator.CreateInstance(cmdType, update.Message!, update.CallbackQuery) as IRequest<Unit>;
+            if (state.CurrentStep == ScenarioStep.Start) return new StartCommand(update.Message!, update.CallbackQuery);
         }
-        // === Обработка обычных коллбэков ===
+        else if (update.BusinessMessage?.Text != null)
+        {
+            var text = update.BusinessMessage.Text;
+            if (state.CurrentStep == ScenarioStep.TransferToSupport)
+                return new SupportMessageCommand(update.BusinessMessage);
+
+            if (_messageRoutes.TryGetValue(text, out var cmdType))
+                return Activator.CreateInstance(cmdType, update.BusinessMessage!, update.CallbackQuery) as
+                    IRequest<Unit>;
+
+            if (state.CurrentStep == ScenarioStep.Start)
+                return new StartCommand(update.BusinessMessage!, update.CallbackQuery);
+        }
         else if (update.CallbackQuery?.Data != null)
         {
             var data = update.CallbackQuery.Data;
 
-            // Сначала точное совпадение
-            if (_callbackRoutes.TryGetValue(data, out var cmdType))
-                return Activator.CreateInstance(cmdType, update) as IRequest<Unit>;
+            if (state.CurrentStep == ScenarioStep.TransferToSupport)
+                return new SupportMessageCommand(update.CallbackQuery!.Message!);
 
-            // Потом проверяем паттерны (регулярки)
+            if (state.CurrentStep == ScenarioStep.TransferToSupport)
+                return new SupportCallbackCommand(update.CallbackQuery!.Message!, update.CallbackQuery);
+            if (_callbackRoutes.TryGetValue(data, out var cmdType))
+                return Activator.CreateInstance(cmdType, update.CallbackQuery!.Message!, update.CallbackQuery) as
+                    IRequest<Unit>;
+
             foreach (var (pattern, patternCommandType) in _callbackPatternRoutes)
             {
                 var match = pattern.Match(data);
-                if (match.Success)
-                {
-                    // Если есть именованная группа "model" (пример)
-                    if (match.Groups["model"].Success)
-                    {
-                        var model = match.Groups["model"].Value;
-                        return Activator.CreateInstance(patternCommandType, update, model) as IRequest<Unit>;
-                    }
-
-                    return Activator.CreateInstance(patternCommandType, update) as IRequest<Unit>;
-                }
+                if (!match.Success) continue;
+                if (!match.Groups["model"].Success)
+                    return Activator.CreateInstance(patternCommandType, update.CallbackQuery!.Message!,
+                        update.CallbackQuery) as IRequest<Unit>;
+                var model = match.Groups["model"].Value;
+                return Activator.CreateInstance(patternCommandType, update.CallbackQuery!.Message!,
+                    update.CallbackQuery, model) as IRequest<Unit>;
             }
         }
 
-        // Если не нашли — вернём null
         return null;
-    }
-
-    /// <summary>
-    ///     Если пользователь в поддержке (TransferToSupport),
-    ///     смотрим, пришло ли сообщение или коллбэк, и создаём "Support..." команды.
-    /// </summary>
-    private IRequest<Unit>? ResolveSupportCommand(Update update)
-    {
-        return update.Type switch
-        {
-            // Если сообщение
-            // Например, SupportMessageCommand
-            // (передаём Update в конструктор)
-            UpdateType.Message when update.Message != null => new SupportMessageCommand(update),
-            // Если коллбэк
-            // SupportCallbackCommand
-            UpdateType.CallbackQuery when update.CallbackQuery != null => new SupportCallbackCommand(update),
-            _ => null
-        };
     }
 }

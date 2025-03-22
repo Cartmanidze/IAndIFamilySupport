@@ -1,3 +1,4 @@
+using IAndIFamilySupport.API.Extensions;
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.Options;
 using IAndIFamilySupport.API.Routing;
@@ -27,11 +28,17 @@ public class TelegramUpdateService(
 
     public async Task HandleUpdateAsync(Update update)
     {
-        // Пытаемся найти команду
+        var user = update.ExtractUser();
+
+        if (user?.Id == 6313458815)
+            return;
+
         var command = router.ResolveCommand(update);
         if (command == null)
         {
-            logger.LogInformation("Не найдена команда для UpdateType={Type}", update.Type);
+            logger.LogInformation(
+                "Не найдена команда или команда была отправлена от лица аккаунта к которому привязан бот для UpdateType={Type}",
+                update.Type);
             await SendUnknownCommandMessage(update);
             return;
         }
@@ -47,14 +54,20 @@ public class TelegramUpdateService(
 
             switch (update.Type)
             {
-                // Можно сообщить пользователю об ошибке
                 case UpdateType.Message when update.Message != null:
                     await botClient.SendMessage(update.Message.Chat.Id,
-                        "Произошла ошибка. Попробуйте /start или обратитесь в поддержку.");
+                        "Произошла ошибка. Попробуйте /start или обратитесь в поддержку.",
+                        businessConnectionId: update.Message.BusinessConnectionId);
+                    break;
+                case UpdateType.BusinessMessage when update.BusinessMessage != null:
+                    await botClient.SendMessage(update.BusinessMessage.Chat.Id,
+                        "Произошла ошибка. Попробуйте /start или обратитесь в поддержку.",
+                        businessConnectionId: update.BusinessMessage.BusinessConnectionId);
                     break;
                 case UpdateType.CallbackQuery when update.CallbackQuery?.Message != null:
                     await botClient.SendMessage(update.CallbackQuery.Message.Chat.Id,
-                        "Произошла ошибка. Попробуйте /start или обратитесь в поддержку.");
+                        "Произошла ошибка. Попробуйте /start или обратитесь в поддержку.",
+                        businessConnectionId: update.CallbackQuery.Message.BusinessConnectionId);
                     break;
             }
         }
@@ -68,22 +81,31 @@ public class TelegramUpdateService(
         try
         {
             long? chatId = null;
+            string? businessConnectionId = null;
 
             switch (update.Type)
             {
                 case UpdateType.Message when update.Message != null:
                     chatId = update.Message.Chat.Id;
+                    businessConnectionId = update.Message?.BusinessConnectionId;
+                    break;
+
+                case UpdateType.BusinessMessage when update.BusinessMessage != null:
+                    chatId = update.BusinessMessage.Chat.Id;
+                    businessConnectionId = update.BusinessMessage?.BusinessConnectionId;
                     break;
 
                 case UpdateType.CallbackQuery when update.CallbackQuery?.Message != null:
                     chatId = update.CallbackQuery.Message.Chat.Id;
+                    businessConnectionId = update.CallbackQuery.Message?.BusinessConnectionId;
                     break;
             }
 
             if (chatId.HasValue)
                 await botClient.SendMessage(
                     chatId.Value,
-                    "Извините, я не понял вашу команду. Попробуйте /start или обратитесь в поддержку."
+                    "Извините, я не понял вашу команду. Попробуйте /start или обратитесь в поддержку.",
+                    businessConnectionId: businessConnectionId
                 );
         }
         catch (Exception ex)

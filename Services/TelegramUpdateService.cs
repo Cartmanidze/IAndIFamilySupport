@@ -1,3 +1,4 @@
+using IAndIFamilySupport.API.Constants;
 using IAndIFamilySupport.API.Extensions;
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.Options;
@@ -30,7 +31,7 @@ public class TelegramUpdateService(
     {
         var user = update.ExtractUser();
 
-        if (user?.Id == 6313458815)
+        if (user?.Id == MasterChat.MasterChatId)
             return;
 
         var command = router.ResolveCommand(update);

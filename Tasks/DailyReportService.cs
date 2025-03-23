@@ -1,5 +1,6 @@
 using System.Text;
 using Cronos;
+using IAndIFamilySupport.API.Constants;
 using IAndIFamilySupport.API.Interfaces;
 using IAndIFamilySupport.API.States;
 using Telegram.Bot;
@@ -8,8 +9,7 @@ namespace IAndIFamilySupport.API.Tasks;
 
 public class DailyReportService(IStateService stateService, ITelegramBotClient botClient) : BackgroundService
 {
-    private const string ReportRecipientUsername = "@Ryan_Gosling_v_filme_draive";
-    private readonly CronExpression _cronExpression = CronExpression.Parse("0 1 * * *");
+    private readonly CronExpression _cronExpression = CronExpression.Parse("* * * * *");
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -58,7 +58,7 @@ public class DailyReportService(IStateService stateService, ITelegramBotClient b
         sb.AppendLine($"\nНезавершённые: {notFinished}");
 
         var transferred = allStates.Count(s => s.CurrentStep == ScenarioStep.TransferToSupport);
-        sb.AppendLine($"Отправлено на поддержку: {transferred}");
+        sb.AppendLine($"\nОтправлено на поддержку: {transferred}");
 
         sb.AppendLine("\nСписок пользователей:");
         foreach (var state in allStates)
@@ -77,9 +77,7 @@ public class DailyReportService(IStateService stateService, ITelegramBotClient b
     {
         try
         {
-            var user = await botClient.GetChat(ReportRecipientUsername, cancellationToken);
-            var chatId = user.Id;
-            await botClient.SendMessage(chatId, report, cancellationToken: cancellationToken);
+            await botClient.SendMessage(MasterChat.MasterChatId, report, cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {

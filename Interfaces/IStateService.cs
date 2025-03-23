@@ -10,4 +10,6 @@ public interface IStateService
     TelegramUserState GetOrAddUserState(User user);
 
     void UpdateUserState(TelegramUserState state);
+
+    TelegramUserState[] GetAndClearUserStates();
 }

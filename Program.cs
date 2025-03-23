@@ -5,6 +5,7 @@ using IAndIFamilySupport.API.Options;
 using IAndIFamilySupport.API.Policies;
 using IAndIFamilySupport.API.Routing;
 using IAndIFamilySupport.API.Services;
+using IAndIFamilySupport.API.Tasks;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Telegram.Bot;
@@ -26,6 +27,7 @@ builder.Services.AddTransient<ITelegramUpdateService, TelegramUpdateService>();
 builder.Services.AddSingleton<IStateService, InMemoryStateService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddSingleton<IResourceService, EmbeddedResourceService>();
+builder.Services.AddHostedService<DailyReportService>();
 
 builder.Services.AddSingleton<CommandRouter>();
 

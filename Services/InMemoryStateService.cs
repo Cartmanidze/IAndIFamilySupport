@@ -38,4 +38,11 @@ public class InMemoryStateService(ILogger<InMemoryStateService> logger) : IState
             state.CurrentStep
         );
     }
+
+    public TelegramUserState[] GetAndClearUserStates()
+    {
+        var states = _userStates.Values.ToArray();
+        _userStates.Clear();
+        return states;
+    }
 }

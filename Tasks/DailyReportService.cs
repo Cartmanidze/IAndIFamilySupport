@@ -40,27 +40,28 @@ public class DailyReportService(IStateService stateService, ITelegramBotClient b
         var sb = new StringBuilder();
         sb.AppendLine("Ежедневный отчёт за " + DateTime.Now.ToString("dd.MM.yyyy"));
 
-        var allStates = stateService.GetAllUserStates().ToList();
+        var allStates = stateService.GetAndClearUserStates().ToList();
 
         var problemCounts = allStates.Where(s => !string.IsNullOrEmpty(s.SelectedProblem))
-                                     .GroupBy(s => s.SelectedProblem)
-                                     .ToDictionary(g => g.Key, g => g.Count());
+            .GroupBy(s => s.SelectedProblem)
+            .ToDictionary(g => g.Key!, g => g.Count());
 
         sb.AppendLine("\nКоличество проблем по типам:");
-        foreach (var problem in problemCounts)
-        {
-            sb.AppendLine($"- {TranslateProblem(problem.Key)}: {problem.Value}");
-        }
+        foreach (var problem in problemCounts) sb.AppendLine($"- {TranslateProblem(problem.Key)}: {problem.Value}");
 
         var successful = allStates.Count(s => s.CurrentStep == ScenarioStep.Finish);
         sb.AppendLine($"\nУспешно обработано ботом: {successful}");
+
+        var notFinished = allStates.Count(s =>
+            s.CurrentStep != ScenarioStep.Finish && s.CurrentStep != ScenarioStep.TransferToSupport);
+
+        sb.AppendLine($"\nНезавершённые: {notFinished}");
 
         var transferred = allStates.Count(s => s.CurrentStep == ScenarioStep.TransferToSupport);
         sb.AppendLine($"Отправлено на поддержку: {transferred}");
 
         sb.AppendLine("\nСписок пользователей:");
         foreach (var state in allStates)
-        {
             sb.AppendLine($"- Username: {state.Username ?? "Не указан"}, " +
                           $"Имя: {state.FirstName} {state.LastName ?? ""}, " +
                           $"Шаг: {TranslateStep(state.CurrentStep)}, " +
@@ -68,7 +69,6 @@ public class DailyReportService(IStateService stateService, ITelegramBotClient b
                           $"Проблема: {TranslateProblem(state.SelectedProblem)}, " +
                           $"Устройство: {TranslateDevice(state.SelectedDevice)}, " +
                           $"Модель телефона: {state.SelectedPhoneModel ?? "Не выбрана"}");
-        }
 
         return sb.ToString();
     }

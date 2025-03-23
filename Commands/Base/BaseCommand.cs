@@ -16,7 +16,7 @@ public abstract record BaseCommand(Message? Message, CallbackQuery? CallbackQuer
     {
         if (CallbackQuery?.Message != null) return CallbackQuery!.From.Id;
         if (Message != null) return Message.From!.Id;
-        throw new InvalidOperationException("Ни Message, ни CallbackQuery не содержат информацию о чате.");
+        throw new InvalidOperationException("Ни Message, ни CallbackQuery не содержат информацию о пользователе.");
     }
 
     public string? GetBusinessConnectionId()

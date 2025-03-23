@@ -9,7 +9,7 @@ namespace IAndIFamilySupport.API.Tasks;
 
 public class DailyReportService(IStateService stateService, ITelegramBotClient botClient) : BackgroundService
 {
-    private readonly CronExpression _cronExpression = CronExpression.Parse("* * * * *");
+    private readonly CronExpression _cronExpression = CronExpression.Parse("0 1 * * *");
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

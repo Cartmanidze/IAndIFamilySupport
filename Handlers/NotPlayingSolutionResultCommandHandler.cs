@@ -22,7 +22,7 @@ public class NotPlayingSolutionResultCommandHandler(
 
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
 
         var data = callback.Data; // "PROBLEM_SOLVED" / "PROBLEM_OTHER"
         switch (data)

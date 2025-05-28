@@ -24,7 +24,7 @@ public class SelectRecorderCommandHandler(
         var selectedModel = request.Model;
 
         // Обновляем состояние
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         state.SelectedRecorderModel = selectedModel;
         state.CurrentStep = ScenarioStep.ConfirmRecorderModel;
         stateService.UpdateUserState(state);

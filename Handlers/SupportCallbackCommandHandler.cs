@@ -21,7 +21,7 @@ public class SupportCallbackCommandHandler(
 
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         if (state.CurrentStep != ScenarioStep.TransferToSupport)
             return Unit.Value;
 

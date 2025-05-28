@@ -7,7 +7,7 @@ public static class StartScenarioTextRepository
     /// </summary>
     public const string FirstMessageReply = @"
 Здравствуйте! 
-Добро пожаловать в службу технической поддержки I and I family! Мы рады, что вы обратились к нам. 
+Добро пожаловать в службу технической поддержки I and I family electronics! Мы рады, что вы обратились к нам. 
 Нашей целью является предоставление вам высококачественного обслуживания и оперативное решение ваших вопросов.
 
 Также приглашаем вас подписаться на наш Telegram-канал (https://t.me/IandIfamily). 
@@ -50,7 +50,7 @@ public static class StartScenarioTextRepository
     /// <summary>
     ///     Предложение выбрать проблему
     /// </summary>
-    public const string ChooseProblemPrompt = "Выберите проблему, которую необходимо решить:";
+    public const string ChooseProblemPrompt = "Выберите вопрос, которую необходимо решить:";
 
     /// <summary>
     ///     Варианты проблем

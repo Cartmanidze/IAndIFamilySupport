@@ -22,7 +22,7 @@ public class ConfirmPhoneConnectionCommandHandler(
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         var data = callback.Data; // "PHONE_CONNECTED_YES" или "PHONE_CONNECTED_NO"
         if (data == "PHONE_CONNECTED_YES")
         {

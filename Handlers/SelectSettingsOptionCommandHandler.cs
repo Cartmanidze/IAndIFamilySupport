@@ -22,7 +22,7 @@ public class SelectSettingsOptionCommandHandler(
 
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
 
         switch (callback.Data)
         {
@@ -76,7 +76,7 @@ public class SelectSettingsOptionCommandHandler(
     private async Task SendOtherSettingsInstructions(long userId, long chatId, string? businessConnectionId,
         CancellationToken ct)
     {
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         var model = state.SelectedRecorderModel!; // "R8", "R8PLUS", "R3"
         var otherSettings = SettingsHelpOptionsRepository.OtherSettings[model];
         await fileService.SendHelpPhotoAsync(bot, chatId, model, businessConnectionId);

@@ -18,7 +18,7 @@ public class StartCommandHandler(
         var userId = request.GetUserId();
         var businessConnectionId = request.GetBusinessConnectionId();
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
 
         await bot.SendMessage(chatId, StartScenarioTextRepository.FirstMessageReply,
             businessConnectionId: businessConnectionId,

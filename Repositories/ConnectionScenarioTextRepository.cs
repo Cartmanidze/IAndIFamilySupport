@@ -10,7 +10,7 @@ public static class ConnectionScenarioTextRepository
     /// <summary>
     ///     Уточнение, к какому устройству пользователь пытается подключить диктофон
     /// </summary>
-    public const string WhichDeviceToConnect = "К какому устройству пытайтесь подключить?";
+    public const string WhichDeviceToConnect = "К какому устройству пытаетесь подключить?";
 
     /// <summary>
     ///     Вариант ответа: телефон
@@ -228,7 +228,6 @@ public static class ConnectionScenarioTextRepository
         "- флеш накопитель\n" +
         "- проводник\n" +
         "- мои файлы\n\n" +
-        "В айфонах эта папка будет называться файлы (далее Untitled или Новый том).\n" +
         "В папке диктофона будут два файла:\n" +
         "- Record (там будут записи, которые вы сделали)\n" +
         "- mreсset.txt";

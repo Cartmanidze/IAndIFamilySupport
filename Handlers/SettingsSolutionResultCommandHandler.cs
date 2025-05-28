@@ -20,7 +20,7 @@ public class SettingsSolutionResultCommandHandler(
 
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
 
         switch (callback.Data)
         {

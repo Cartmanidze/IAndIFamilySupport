@@ -25,7 +25,7 @@ public class SelectPhoneModelCommandHandler(
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
 
         var data = callback.Data; // например "PHONE_SAMSUNG", "PHONE_IPHONE_NEW"
         var phoneModel = data!.StartsWith("PHONE_") ? data[6..] : data;
@@ -46,6 +46,11 @@ public class SelectPhoneModelCommandHandler(
         }
         else
         {
+            await bot.SendMessage(chatId,
+                "Перед подключением диктофона к телефону, переведите \"бегунок\"- кнопку на диктофоне в положение OFF",
+                businessConnectionId: businessConnectionId,
+                cancellationToken: cancellationToken);
+            
             // Отправляем фото подключения
             await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 1, businessConnectionId);
 

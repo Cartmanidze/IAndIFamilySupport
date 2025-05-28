@@ -23,7 +23,7 @@ public class NotPlayingSelectDeviceCommandHandler(
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         var data = callback.Data; // "PLAYBACK_PHONE" или "PLAYBACK_PC"
         switch (data)
         {

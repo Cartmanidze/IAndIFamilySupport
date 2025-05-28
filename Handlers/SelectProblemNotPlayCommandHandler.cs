@@ -20,7 +20,7 @@ public class SelectProblemNotPlayCommandHandler(
         var businessConnectionId = request.GetBusinessConnectionId();
         if (chatId == 0 || userId == 0) return Unit.Value;
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
 
         logger.LogInformation("Пользователь {UserId} выбрал проблему с воспроизведением", userId);
         state.SelectedProblem = "PROBLEM_NOTPLAY";

@@ -25,7 +25,7 @@ public class SelectPcModelCommandHandler(
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
 
         var data = callback.Data; // "PC_WINDOWS" или "PC_MACOS"
         var pcModel = data!.StartsWith("PC_") ? data[3..] : data;

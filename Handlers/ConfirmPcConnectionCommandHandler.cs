@@ -35,7 +35,7 @@ public class ConfirmPcConnectionCommandHandler
         // Убираем "крутилку"
         await _bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = _stateService.GetUserState(userId);
+        var state = _stateService.GetUserState(userId)!;
 
         var data = callback.Data; // PC_CONNECTED_YES, PC_CONNECTED_NO
         if (data == "PC_CONNECTED_YES")

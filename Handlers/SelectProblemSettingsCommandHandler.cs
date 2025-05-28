@@ -21,7 +21,7 @@ public class SelectProblemSettingsCommandHandler(
 
         if (chatId == 0 || userId == 0) return Unit.Value;
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
 
         logger.LogInformation("Пользователь {UserId} выбрал проблему с настройками", userId);
         state.SelectedProblem = "PROBLEM_SETTINGS";

@@ -18,7 +18,7 @@ public class ReselectRecorderCommandHandler(
         var userId = request.GetUserId();
         var businessConnectionId = request.GetBusinessConnectionId();
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         state.CurrentStep = ScenarioStep.SelectRecorderModel;
         stateService.UpdateUserState(state);
 

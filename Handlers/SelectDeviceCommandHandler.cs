@@ -29,7 +29,7 @@ public class SelectDeviceCommandHandler(
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
         // Проверяем, что шаг пользователя действительно HowToConnectDevice
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         var data = callback.Data; // "DEVICE_PHONE" или "DEVICE_PC"
         var deviceType = data!.Replace("DEVICE_", "");
         state.SelectedDevice = deviceType;
@@ -52,9 +52,14 @@ public class SelectDeviceCommandHandler(
 
             case "PC":
                 // Показать клавиатуру выбора модели ПК
+                await bot.SendMessage(chatId,
+                    "Перед подключением диктофона к компьютеру, переведите \"бегунок\"- кнопку на диктофоне в положение OFF",
+                    businessConnectionId: businessConnectionId,
+                    cancellationToken: cancellationToken);
+                
                 await bot.SendMessage(
                     chatId,
-                    ConnectionScenarioTextRepository.SpecifyPhoneModel,
+                    "Уточните операционную систему вашего компьютера",
                     replyMarkup: KeyboardHelper.PcModelMenu(),
                     businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken

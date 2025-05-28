@@ -20,7 +20,7 @@ public class ConfirmRecorderCommandHandler(
         var userId = request.GetUserId();
         var businessConnectionId = request.GetBusinessConnectionId();
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         var previouslySelected = state.SelectedRecorderModel;
         var modelFromCallback = request.Model;
 

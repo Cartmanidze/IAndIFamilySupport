@@ -24,7 +24,7 @@ public class NotPlayingErrorTypeCommandHandler(
         // Убираем "крутилку"
         await bot.AnswerCallbackQuery(callback.Id, cancellationToken: cancellationToken);
 
-        var state = stateService.GetUserState(userId);
+        var state = stateService.GetUserState(userId)!;
         var data = callback.Data; // "ERROR_CODING" / "ERROR_OTHER"
 
         if (data == "ERROR_CODING")

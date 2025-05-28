@@ -53,6 +53,10 @@ public class SelectPhoneModelCommandHandler(
             
             // Отправляем фото подключения
             await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 1, businessConnectionId);
+            
+            await bot.SendMessage(chatId, "Так выглядит правильное подключение",
+                businessConnectionId: businessConnectionId,
+                cancellationToken: cancellationToken);
 
             // Если iPhone_old, дополнительно сообщим про OTG
             if (phoneModel == "IPHONE_OLD")
@@ -80,6 +84,16 @@ public class SelectPhoneModelCommandHandler(
             else
             {
                 // Android-модели
+                await bot.SendMessage(chatId, "После подключения диктофона к телефону, проверьте оповещения в \"шторке\"",
+                    businessConnectionId: businessConnectionId,
+                    cancellationToken: cancellationToken);
+                
+                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 2, businessConnectionId);
+                
+                await bot.SendMessage(chatId, "Если оповещения нет, проверьте порядок подключения. После чего включите OTG. Рекомендация по включение OTG",
+                    businessConnectionId: businessConnectionId,
+                    cancellationToken: cancellationToken);
+                
                 await bot.SendMessage(chatId, ConnectionScenarioTextRepository.OtgActivationRecommendation,
                     businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);

@@ -348,7 +348,12 @@ internal sealed class FileService : IFileService
                     5 => "Record.jpg",
                     _ => "Connection.jpg"
                 },
-                _ => "Connection.jpg"
+                _ => step switch
+                {
+                    1 => "Connection.jpg",
+                    2 => "NotificationShade.jpg",
+                    _ => "Connection.jpg"
+                }
             };
 
         // Mac или Win

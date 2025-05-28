@@ -50,7 +50,7 @@ public static class StartScenarioTextRepository
     /// <summary>
     ///     Предложение выбрать проблему
     /// </summary>
-    public const string ChooseProblemPrompt = "Выберите вопрос, которую необходимо решить:";
+    public const string ChooseProblemPrompt = "Выберите вопрос, который необходимо решить:";
 
     /// <summary>
     ///     Варианты проблем

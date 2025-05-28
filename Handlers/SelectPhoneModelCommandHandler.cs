@@ -90,7 +90,7 @@ public class SelectPhoneModelCommandHandler(
                 
                 await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 2, businessConnectionId);
                 
-                await bot.SendMessage(chatId, "Если оповещения нет, проверьте порядок подключения. После чего включите OTG. Рекомендация по включение OTG",
+                await bot.SendMessage(chatId, "Если оповещения нет, проверьте порядок подключения. После чего включите OTG",
                     businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
                 

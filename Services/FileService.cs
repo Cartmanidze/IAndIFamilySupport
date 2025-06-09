@@ -50,7 +50,7 @@ internal sealed class FileService : IFileService
         _pdfInstructionMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "R8PLUS", "Instructions.R8PLUS.pdf" },
-            { "R3", "Instruction.R3.pdf" },
+            { "R3", "Instructions.R3.pdf" },
             { "R8", "Instructions.R8.pdf" }
         };
     }
@@ -141,10 +141,10 @@ internal sealed class FileService : IFileService
 
             var fileName = model switch
             {
-                "R8PLUS" => "Instructions.R8PLUS.pdf",
-                "R3" => "Instruction.R3.pdf",
-                "R8" => "Instructions.R8.pdf",
-                _ => $"Instructions.{model}.pdf"
+                "R8PLUS" => "R8PLUS.pdf",
+                "R3" => "R3.pdf",
+                "R8" => "R8.pdf",
+                _ => $"{model}.pdf"
             };
 
             _logger.LogInformation("Отправляем PDF-инструкцию для модели {Model}, размер: {Size} байт", model,

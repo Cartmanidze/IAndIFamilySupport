@@ -337,6 +337,8 @@ internal sealed class FileService : IFileService
                     2 => "Files.jpg",
                     3 => "Untitled.jpg",
                     4 => "Record.jpg",
+                    6 => "WiredAccessoriesInstructions.jpg",
+                    7 => "WiredAccessoriesOptions.jpg",
                     _ => "Connection.jpg"
                 },
                 "IPHONE_OLD" => step switch
@@ -346,6 +348,8 @@ internal sealed class FileService : IFileService
                     3 => "Files.jpg",
                     4 => "Untitled.jpg",
                     5 => "Record.jpg",
+                    6 => "WiredAccessoriesInstructions.jpg",
+                    7 => "WiredAccessoriesOptions.jpg",
                     _ => "Connection.jpg"
                 },
                 _ => step switch

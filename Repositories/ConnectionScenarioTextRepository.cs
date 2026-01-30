@@ -233,6 +233,14 @@ public static class ConnectionScenarioTextRepository
         "- mreсset.txt";
 
     /// <summary>
+    ///     Информация о файлах в папке диктофона (без списка разделов)
+    /// </summary>
+    public const string DictaphoneFolderFilesOnly =
+        "В папке диктофона будут два файла:\n" +
+        "- Record (там будут записи, которые вы сделали)\n" +
+        "- mreсset.txt";
+
+    /// <summary>
     ///     Словарь с инструкциями по включению OTG для разных моделей телефонов
     /// </summary>
     public static readonly Dictionary<string, string> OtgActivationInstructions = new(StringComparer.OrdinalIgnoreCase)

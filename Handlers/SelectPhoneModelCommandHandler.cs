@@ -80,6 +80,17 @@ public class SelectPhoneModelCommandHandler(
                     cancellationToken: cancellationToken);
 
                 await fileService.SendVideoAsync(bot, chatId, "PHONE", phoneModel, businessConnectionId);
+
+                await bot.SendMessage(chatId, AccessoriesCheckRepository.Iphone16AccessoriesNote,
+                    businessConnectionId: businessConnectionId,
+                    cancellationToken: cancellationToken);
+
+                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 6, businessConnectionId);
+                await fileService.SendConnectionPhotoAsync(bot, chatId, "PHONE", phoneModel, 7, businessConnectionId);
+
+                await bot.SendMessage(chatId, ConnectionScenarioTextRepository.DictaphoneFolderFilesOnly,
+                    businessConnectionId: businessConnectionId,
+                    cancellationToken: cancellationToken);
             }
             else
             {
@@ -100,11 +111,11 @@ public class SelectPhoneModelCommandHandler(
                 await bot.SendMessage(chatId, ConnectionScenarioTextRepository.GetOtgActivationInstruction(phoneModel),
                     businessConnectionId: businessConnectionId,
                     cancellationToken: cancellationToken);
-            }
 
-            await bot.SendMessage(chatId, ConnectionScenarioTextRepository.DictaphoneFolderLocation,
-                businessConnectionId: businessConnectionId,
-                cancellationToken: cancellationToken);
+                await bot.SendMessage(chatId, ConnectionScenarioTextRepository.DictaphoneFolderLocation,
+                    businessConnectionId: businessConnectionId,
+                    cancellationToken: cancellationToken);
+            }
 
             // Спросим, получилось ли
             await bot.SendMessage(

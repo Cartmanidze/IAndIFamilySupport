@@ -18,5 +18,12 @@
         <EmbeddedResource Include="Files\**\*.*"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Remove="tests\**\*.cs"/>
+        <Content Remove="tests\**\*"/>
+        <EmbeddedResource Remove="tests\**\*"/>
+        <None Remove="tests\**\*"/>
+    </ItemGroup>
+
 </Project>
 

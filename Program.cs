@@ -12,8 +12,11 @@ using Telegram.Bot;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<TelegramSettings>(
-    builder.Configuration.GetSection("TelegramBot"));
+builder.Services
+    .AddOptions<TelegramSettings>()
+    .Bind(builder.Configuration.GetSection("TelegramBot"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ConfirmRecorderCommandHandler).Assembly));
 

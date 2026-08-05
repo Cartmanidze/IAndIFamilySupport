@@ -58,6 +58,11 @@ iisExpress/
 appsettings.Development.json
 appsettings.Local.json
 appsettings.*.json
+.env
+.env.*
+!.env.example
+deploy/*.env
+!deploy/*.env.example
 
 # Файлы пакетных менеджеров (если используются)
 node_modules/

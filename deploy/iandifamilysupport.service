@@ -1,0 +1,23 @@
+[Unit]
+Description=IAndIFamilySupport Telegram bot
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=iandifamilysupport
+Group=iandifamilysupport
+WorkingDirectory=/opt/iandifamilysupport
+ExecStart=/opt/iandifamilysupport/IAndIFamilySupport.API
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5080
+Environment=DOTNET_ENVIRONMENT=Production
+EnvironmentFile=/etc/iandifamilysupport.env
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target
